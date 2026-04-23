@@ -204,7 +204,7 @@ public class TableBuilder
 
 public class TableGenerate
 {
-    private string BackgroundPath => ImageUtils.GetRandOneBotBackground();
+    private string BackgroundPath => ImageUtility.GetRandOneBotBackground();
 
     public int TableFontSize { get; set; } = 26;
 
@@ -292,7 +292,7 @@ public class TableGenerate
         return (RowHeigths, RowWidths.ToArray());
     }
 
-    public Image<Rgba32> GetAvatar(int size) => ImageUtils.GetAvatar(MemberUin, size);
+    public Image<Rgba32> GetAvatar(int size) => ImageUtility.GetAvatar(MemberUin, size);
 
     public Image<Rgba32> DrawContent(TableBuilder builder)
     {
@@ -441,6 +441,6 @@ public class TableGenerate
 
     private FontFamily GetFontFamily()
     {
-        return ImageUtils.Instance.FontFamily;
+        return ImageUtility.Instance.FontFamily;
     }
 }

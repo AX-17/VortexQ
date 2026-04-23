@@ -216,7 +216,7 @@ public class ProfileCard
 {
     // 配置选项
     public uint MemberUin { get; set; }
-    public string BackgroundPath => ImageUtils.GetRandOneBotBackground();
+    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
     public byte CardOpacity { get; set; } = 230;
     public int CardWidth { get; set; } = 450;
     public float CardCornerRadius { get; set; } = 40;
@@ -258,7 +258,7 @@ public class ProfileCard
         try
         {
             // 创建头像
-            using var avatar = ImageUtils.GetAvatar(MemberUin, AvatarSize);
+            using var avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
 
             // 计算尺寸和位置
             var layout = CalculateLayout(avatar.Height, builder);
@@ -284,7 +284,7 @@ public class ProfileCard
     // 获取字体
     private FontFamily GetFontFamily()
     {
-        return ImageUtils.Instance.FontFamily;
+        return ImageUtility.Instance.FontFamily;
     }
 
     // 计算布局

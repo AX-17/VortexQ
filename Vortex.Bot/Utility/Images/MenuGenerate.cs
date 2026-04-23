@@ -138,7 +138,7 @@ public class MenuBuilder
 
 public class MenuGenerate
 {
-    public string BackgroundPath => ImageUtils.GetRandOneBotBackground();
+    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
 
     public int FontSize { get; set; } = 36; //正常大小
 
@@ -178,7 +178,7 @@ public class MenuGenerate
 
     public (int Width, int Height) ComputeLayout(MenuBuilder builder)
     {
-        var fontFamily = ImageUtils.GetFontFamily();
+        var fontFamily = ImageUtility.GetFontFamily();
         var font = fontFamily.CreateFont(FontSize);
         var smallFont = fontFamily.CreateFont(SmallFontSize);
         var signatureFont = fontFamily.CreateFont(SignatureFontSize);
@@ -236,7 +236,7 @@ public class MenuGenerate
         using var background = Image.Load<Rgba32>(BackgroundPath);
         using var image = background.Crop(totalWidth, totalHeight);
 
-        var fontFamily = ImageUtils.GetFontFamily();
+        var fontFamily = ImageUtility.GetFontFamily();
         var font = fontFamily.CreateFont(FontSize);
         var smallFont = fontFamily.CreateFont(SmallFontSize);
         var signatureFont = fontFamily.CreateFont(SignatureFontSize);
@@ -247,7 +247,7 @@ public class MenuGenerate
         int cellCountInLine = 0;
 
         // 获取头像并绘制在图片上方
-        var avatar = ImageUtils.GetAvatar(MemberUin, AvatarSize);
+        var avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
 
         image.Mutate(ctx =>
         {

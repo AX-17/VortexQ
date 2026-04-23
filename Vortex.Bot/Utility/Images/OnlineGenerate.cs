@@ -135,7 +135,7 @@ public class OnlineBuilder
 
 public class OnlineGenerate
 {
-    public string BackgroundPath => ImageUtils.GetRandOneBotBackground();
+    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
 
     public int FontSize { get; set; } = 36; //字体大小
 
@@ -163,7 +163,7 @@ public class OnlineGenerate
 
     public (int Width, List<int> Heights) ComputeLayout(OnlineBuilder builder)
     {
-        var family = ImageUtils.GetFontFamily();
+        var family = ImageUtility.GetFontFamily();
         var font = family.CreateFont(FontSize);
         var titleFont = family.CreateFont(TitleFontSize);
 
@@ -227,7 +227,7 @@ public class OnlineGenerate
 
         using var image = background.Crop(width, totalHeight);
 
-        var family = ImageUtils.GetFontFamily();
+        var family = ImageUtility.GetFontFamily();
         var font = family.CreateFont(FontSize);
         var titleFont = family.CreateFont(TitleFontSize);
 
@@ -265,7 +265,7 @@ public class OnlineGenerate
                     int y = (int)(yOffset + row * (AvatarSize + Spacing + font.Size));
 
                     // 绘制头像
-                    var avatar = ImageUtils.GetAvatar(cell.Uin, AvatarSize);
+                    var avatar = ImageUtility.GetAvatar(cell.Uin, AvatarSize);
                     ctx.DrawImage(avatar, new Point(x, y), 1);
 
                     // 计算文本位置并绘制

@@ -196,7 +196,7 @@ public class ListGenerate
 
     public int LineMaxTextLength { get; set; } = 40;
 
-    public string BackgroundPath => ImageUtils.GetRandOneBotBackground();
+    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
 
     public int TitleFontSize { get; set; } = 80;
 
@@ -236,7 +236,7 @@ public class ListGenerate
 
     public (int[] RowHeigth, int Width) ComputeLayout(ListBuilder builder)
     {
-        var tableFont = ImageUtils.GetFontFamily().CreateFont(FonwSize);
+        var tableFont = ImageUtility.GetFontFamily().CreateFont(FonwSize);
         var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         var textOption = new RichTextOptions(tableFont)
         {
@@ -259,7 +259,7 @@ public class ListGenerate
     public byte[] DrawContent(ListBuilder builder)
     {
         using var background = Image.Load<Rgba32>(BackgroundPath);
-        var fontFamily = ImageUtils.GetFontFamily();
+        var fontFamily = ImageUtility.GetFontFamily();
         var tableFont = fontFamily.CreateFont(FonwSize);
         var titleFont = fontFamily.CreateFont(TitleFontSize);
         var signFont = fontFamily.CreateFont(SignaturFontSize);
@@ -330,7 +330,7 @@ public class ListGenerate
         d.DrawText(Title, titleFont, TitleColor, titlePosition);
     }
 
-    public Image<Rgba32> GetAvatar(int size) => ImageUtils.GetAvatar(MemberUin, size);
+    public Image<Rgba32> GetAvatar(int size) => ImageUtility.GetAvatar(MemberUin, size);
 
     private void DrawAvatar(IImageProcessingContext d, int maxWidth)
     {

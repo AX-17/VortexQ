@@ -4,7 +4,7 @@ using System.Web;
 
 namespace Vortex.Bot.Utility;
 
-public static class HttpUtils
+public static class HttpUtility
 {
     private static readonly HttpClient HttpClient = new();
     public static async Task<string> GetStringAsync(string url, Dictionary<string, string>? args = null, CancellationToken cancellationToken = default)
@@ -15,7 +15,7 @@ public static class HttpUtils
     public static string QueryUri(string url, Dictionary<string, string>? @params = null)
     {
         var uri = new UriBuilder(url);
-        var args = HttpUtility.ParseQueryString(uri.Query);
+        var args = System.Web.HttpUtility.ParseQueryString(uri.Query);
         if (@params is not null)
             foreach (var (key, value) in @params)
                 args[key] = value;

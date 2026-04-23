@@ -75,10 +75,20 @@ internal static class CommandHelper
 
     private static IEnumerable<string> GetCommandAlias(MemberInfo info)
     {
-        var alias = info.GetCustomAttributes<CommandAttribute>().SelectMany(a => a.Alias);
+        // 获取 CommandAttribute 中的别名
+        var commandAliases = info.GetCustomAttributes<CommandAttribute>().SelectMany(a => a.Alias);
+        // 获取 AliasAttribute 中的别名
+        var aliasAttrs = info.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
+        
         var flag = false;
 
-        foreach (var a in alias)
+        foreach (var a in commandAliases)
+        {
+            flag = true;
+            yield return a;
+        }
+
+        foreach (var a in aliasAttrs)
         {
             flag = true;
             yield return a;

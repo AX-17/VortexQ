@@ -5,14 +5,14 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Vortex.Bot.Extension;
 
-namespace Vortex.Bot.Utility.Images;
+namespace Vortex.Bot.Utility;
 
-internal class ImageUtils
+internal class ImageUtility
 {
     public FontFamily FontFamily { get; }
 
-    public static readonly ImageUtils Instance = new();
-    private ImageUtils()
+    public static readonly ImageUtility Instance = new();
+    private ImageUtility()
     {
         var fc = new FontCollection();
         FontFamily = fc.Add("Resources/Font/simhei.ttf");
@@ -25,7 +25,7 @@ internal class ImageUtils
 
     public static Image<Rgba32> GetAvatar(long uin, int size)
     {
-        var buffer = HttpUtils.GetByteAsync($"http://q.qlogo.cn/headimg_dl?dst_uin={uin}&spec=640&img_type=png").Result;
+        var buffer = HttpUtility.GetByteAsync($"http://q.qlogo.cn/headimg_dl?dst_uin={uin}&spec=640&img_type=png").Result;
         using var image = Image.Load<Rgba32>(buffer);
         var avatar = image.CutCircles(size);
         return avatar;
