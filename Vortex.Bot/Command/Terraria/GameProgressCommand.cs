@@ -1,0 +1,53 @@
+using Microsoft.Extensions.DependencyInjection;
+using Vortex.Bot.Attributes;
+using Vortex.Bot.Command;
+using Vortex.Bot.Services;
+using Vortex.Bot.Utility.Images;
+
+namespace Vortex.Bot.Command.Terraria;
+
+[Command("进度", "progress")]
+[CommandType(CommandType.Group | CommandType.Friend)]
+[Permission("vortex.terraria.progress")]
+public static class GameProgressCommand
+{
+    [Main]
+    public static async Task ShowGameProgress(CommandArgs args)
+    {
+        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerManager>();
+        if (serverManager == null)
+        {
+            await args.ReplyAsync("服务器管理器未初始化");
+            return;
+        }
+
+        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
+
+        if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
+        {
+            await args.ReplyAsync("请先使用 '切换服务器 <名称>' 选择要操作的服务器!");
+            return;
+        }
+
+        var progress = await server.GetGameProgressAsync();
+
+        if (progress?.Success == true && progress.Progress != null)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[{server.Config.Name}] 游戏进度");
+            sb.AppendLine();
+
+            foreach (var item in progress.Progress)
+            {
+                var status = item.Value ? "✅" : "❌";
+                sb.AppendLine($"{status} {item.Key}");
+            }
+
+            await args.ReplyAsync(sb.ToString());
+        }
+        else
+        {
+            await args.ReplyAsync($"[{server.Config.Name}] 获取进度失败: {progress?.Message ?? "无法连接服务器"}");
+        }
+    }
+}

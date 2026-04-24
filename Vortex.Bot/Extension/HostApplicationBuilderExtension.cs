@@ -11,6 +11,7 @@ using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database;
 using Vortex.Bot.Interface;
 using Vortex.Bot.Plugins;
+using Vortex.Bot.Services;
 using Vortex.Bot.Utility;
 using Vortex.Bot.Utility.CaptchaResolver;
 using CoreLogLevel = Lagrange.Core.Events.EventArgs.LogLevel;
@@ -122,5 +123,22 @@ public static class HostApplicationBuilderExtension
 
             // PluginLoaderService (在登录成功后加载插件)
             .AddHostedService<PluginLoaderService>()
+
+            // VortexServer 子系统
+            .AddSingleton<ClientConnectionManager>()
+            .AddSingleton<PacketHandlerManager>()
+
+            // VortexServer (TCP协议服务器)
+            .AddSingleton<VortexServer>()
+            .AddHostedService(services =>
+            {
+                var server = services.GetRequiredService<VortexServer>();
+                var context = services.GetRequiredService<VortexContext>();
+                context.Server = server;
+                return server;
+            })
+
+            // TerrariaServerManager (泰拉瑞亚服务器管理)
+            .AddSingleton<TerrariaServerManager>()
         );
 }

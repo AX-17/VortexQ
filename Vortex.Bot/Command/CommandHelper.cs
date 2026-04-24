@@ -43,8 +43,8 @@ internal static class CommandHelper
         foreach (var func in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
         {
             var al = GetAlias(func).ToArray();
-            var isFlexible = func.GetCustomAttribute<FlexibleAttribute>() != null;
             var isMain = func.GetCustomAttribute<MainAttribute>() != null;
+            var isFlexible = isMain || func.GetCustomAttribute<FlexibleAttribute>() != null;
 
             var infoPrefix = isMain ? prefix : prefix + AliasToString(al);
             CommandBase sub = new CommandExecutor(func, infoPrefix, isFlexible);

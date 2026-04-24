@@ -1,4 +1,3 @@
-using DeltaForce.Protocol.Serialization;
 using System.Reflection;
 using Vortex.Protocol.Enums;
 using Vortex.Protocol.Interfaces;
@@ -40,6 +39,7 @@ public class PacketSerializer
         {
             if (!prop.CanRead || !prop.CanWrite) continue;
             if (prop.IsDefined(typeof(IgnoreAttribute))) continue;
+            if (prop.Name == "PacketID") continue;
 
             var ser = RequestFieldSerializer(prop.PropertyType, prop);
 
@@ -76,7 +76,8 @@ public class PacketSerializer
         [typeof(string)] = new StringSerializer(),
         [typeof(Guid)] = new GuidSerializer(),
         [typeof(byte[])] = new ByteArraySerializer(),
-        [typeof(DateTime)] = new DateTimeSerializer()
+        [typeof(DateTime)] = new DateTimeSerializer(),
+        [typeof(TimeSpan)] = new TimeSpanSerializer()
     };
 
     public static IFieldSerializer RequestFieldSerializer(Type type, PropertyInfo? prop)
@@ -100,13 +101,13 @@ public class PacketSerializer
 
         _ when type.IsArray => CreateGenericSerializer(typeof(ArraySerializer<>), type.GetElementType()!),
 
-        _ when type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) 
+        _ when type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)
             => CreateGenericSerializer(typeof(ListSerializer<>), type.GetGenericArguments()[0]),
 
-        _ when Nullable.GetUnderlyingType(type) is { } underlyingType 
+        _ when Nullable.GetUnderlyingType(type) is { } underlyingType
             => CreateGenericSerializer(typeof(NullableSerializer<>), underlyingType),
 
-        _ when type.IsClass && type != typeof(object) 
+        _ when type.IsClass && type != typeof(object)
             => CreateGenericSerializer(typeof(ClassSerializer<>), type),
 
         _ => throw new NotSupportedException($"Type {type} is not supported for serialization")
@@ -131,6 +132,7 @@ public class PacketSerializer
             var length = (short)ms.Position;
             ms.Position = 0;
             bw.Write(length);
+
             return ms.ToArray();
         }
 
@@ -141,6 +143,8 @@ public class PacketSerializer
     {
         var length = br.ReadInt16();
         var packetType = (PacketType)br.ReadByte();
+
+
 
         if (_deserializers.TryGetValue(packetType, out var f))
         {

@@ -3,8 +3,8 @@ using Vortex.Protocol.Interfaces;
 namespace Vortex.Protocol.Processing;
 
 public abstract class RequestHandlerBase<TRequest, TResponse>
-    where TRequest : IRequestPacket
-    where TResponse : IResponsePacket, new()
+    where TRequest : IServicePacket
+    where TResponse : IClientPacket, new()
 {
     public abstract TResponse Handle(TRequest request);
 

@@ -1,4 +1,4 @@
-﻿using SixLabors.Fonts;
+﻿﻿using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;

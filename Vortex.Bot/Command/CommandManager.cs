@@ -1,24 +1,15 @@
-using System.Collections.Frozen;
 using System.Reflection;
-using Lagrange.Core;
-using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Core.Message.Entities;
 using Microsoft.Extensions.Logging;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Utility;
 
 namespace Vortex.Bot.Command;
 
-public sealed class CommandManager
+public sealed class CommandManager(ILogger<CommandManager> logger)
 {
     private readonly Dictionary<string, CommandRegistration> _commands = [];
-    private readonly ILogger<CommandManager> _logger;
-
-    public CommandManager(ILogger<CommandManager> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<CommandManager> _logger = logger;
 
     public void AutoRegister(Assembly assembly)
     {

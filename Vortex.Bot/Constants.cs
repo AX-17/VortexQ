@@ -5,12 +5,12 @@ namespace Vortex.Bot;
 internal static class Constants
 {
     public const string Banner = """
-        __  ___  _   __  __
-       /  |/  / (_) / / / /__  __  __
-      / /|_/ / / / / / / //_/ / / / /
-     / /  / / / / / / / ,<   / /_/ /
-    /_/  /_/ /_/ /_/ /_/|_|  \__, /
-    Powered by Lagrange.Core/____/
+    __     _____  ____ _____ _______  __
+    \ \   / / _ \|  _ \_   _| ____\ \/ /
+     \ \ / / | | | |_) || | |  _|  \  / 
+      \ V /| |_| |  _ < | | | |___ /  \ 
+       \_/  \___/|_| \_\|_| |_____/_/\_\
+                Vortex.Bot
     """;
 
     public const string ConfigFileName = "appsettings.jsonc";
@@ -23,5 +23,5 @@ internal static class Constants
         ?.InformationalVersion?[6..]
         ?? "Unknown";
 
-    public static string MilkyVersion = "1.1";
+    public static string Version = "1.0";
 }

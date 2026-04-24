@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LagrangeV2\Lagrange.Core\Lagrange.Core.csproj" />
+    <ProjectReference Include="..\Vortex.Protocol\Vortex.Protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>

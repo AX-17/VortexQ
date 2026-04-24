@@ -8,11 +8,11 @@ public class PacketProcessor
 {
     private readonly ConcurrentDictionary<byte, Func<INetPacket, INetPacket?>> _handlers = new();
 
-    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<IResponsePacket>> _pendingRequests = new();
+    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<IClientPacket>> _pendingRequests = new();
 
     public void Register<TRequest, TResponse>(Func<TRequest, TResponse> handler)
-        where TRequest : IRequestPacket
-        where TResponse : IResponsePacket
+        where TRequest : IServicePacket
+        where TResponse : IClientPacket
     {
         var instance = Activator.CreateInstance<TRequest>();
         var packetId = (byte)instance.PacketID;
@@ -32,8 +32,8 @@ public class PacketProcessor
     }
 
     public void Register<TRequest, TResponse>(RequestHandlerBase<TRequest, TResponse> handler)
-        where TRequest : IRequestPacket
-        where TResponse : IResponsePacket, new()
+        where TRequest : IServicePacket
+        where TResponse : IClientPacket, new()
     {
         var instance = Activator.CreateInstance<TRequest>();
         var packetId = (byte)instance.PacketID;
@@ -90,7 +90,7 @@ public class PacketProcessor
 
     public INetPacket? Process(INetPacket packet)
     {
-        if (packet is IResponsePacket response)
+        if (packet is IClientPacket response)
         {
             if (_pendingRequests.TryRemove(response.RequestId, out var tcs))
             {
@@ -112,10 +112,10 @@ public class PacketProcessor
         TRequest request,
         Func<INetPacket, Task> sendAsync,
         int timeoutMs = 5000)
-        where TRequest : IRequestPacket
-        where TResponse : class, IResponsePacket
+        where TRequest : IServicePacket
+        where TResponse : class, IClientPacket
     {
-        var tcs = new TaskCompletionSource<IResponsePacket>();
+        var tcs = new TaskCompletionSource<IClientPacket>();
         _pendingRequests[request.RequestId] = tcs;
 
         try
@@ -137,8 +137,8 @@ public class PacketProcessor
     }
 
     public static TResponse CreateResponse<TRequest, TResponse>(TRequest request, bool success = true, string message = "")
-        where TRequest : IRequestPacket
-        where TResponse : IResponsePacket, new()
+        where TRequest : IServicePacket
+        where TResponse : IClientPacket, new()
     {
         return new TResponse
         {
