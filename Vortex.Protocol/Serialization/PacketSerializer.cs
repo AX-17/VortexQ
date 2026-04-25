@@ -7,8 +7,17 @@ namespace Vortex.Protocol.Serialization;
 
 public class PacketSerializer
 {
-    private readonly Dictionary<Type, Action<BinaryWriter, object>> _serializers = [];
-    private readonly Dictionary<PacketType, Func<BinaryReader, object>> _deserializers = [];
+    private readonly Dictionary<Type, Action<BinaryWriter, object>> _serializers = new();
+    private readonly Dictionary<PacketType, Func<BinaryReader, object>> _deserializers = new();
+
+    private static readonly Dictionary<Type, IFieldSerializer> FieldSerializers = new()
+    {
+        [typeof(string)] = new StringSerializer(),
+        [typeof(Guid)] = new GuidSerializer(),
+        [typeof(byte[])] = new ByteArraySerializer(),
+        [typeof(DateTime)] = new DateTimeSerializer(),
+        [typeof(TimeSpan)] = new TimeSpanSerializer()
+    };
 
     public PacketSerializer()
     {
@@ -41,14 +50,12 @@ public class PacketSerializer
             if (prop.IsDefined(typeof(IgnoreAttribute))) continue;
             if (prop.Name == "PacketID") continue;
 
-            var ser = RequestFieldSerializer(prop.PropertyType, prop);
-
-            var currentProp = prop;
-            serializers.Add((bw, o) => ser.Write(bw, currentProp.GetValue(o)));
-            deserializers.Add((o, br) => currentProp.SetValue(o, ser.Read(br)));
+            var (serializeAction, deserializeAction) = CreatePropertyActions(prop);
+            serializers.Add(serializeAction);
+            deserializers.Add(deserializeAction);
         }
 
-        var inst = Activator.CreateInstance(type) as INetPacket;
+        var packetId = (Activator.CreateInstance(type) as INetPacket)?.PacketID ?? 0;
 
         if (serializers.Count > 0)
         {
@@ -61,7 +68,7 @@ public class PacketSerializer
 
         if (deserializers.Count > 0)
         {
-            _deserializers[inst!.PacketID] = br =>
+            _deserializers[packetId] = br =>
             {
                 var result = Activator.CreateInstance(type)!;
                 foreach (var d in deserializers)
@@ -71,14 +78,37 @@ public class PacketSerializer
         }
     }
 
-    private static readonly Dictionary<Type, IFieldSerializer> FieldSerializers = new()
+    private (Action<BinaryWriter, object> serialize, Action<object, BinaryReader> deserialize) CreatePropertyActions(PropertyInfo prop)
     {
-        [typeof(string)] = new StringSerializer(),
-        [typeof(Guid)] = new GuidSerializer(),
-        [typeof(byte[])] = new ByteArraySerializer(),
-        [typeof(DateTime)] = new DateTimeSerializer(),
-        [typeof(TimeSpan)] = new TimeSpanSerializer()
-    };
+        var serializer = RequestFieldSerializer(prop.PropertyType, prop);
+
+        if (IsCollectionType(prop.PropertyType))
+        {
+            Action<BinaryWriter, object> serialize = (bw, o) =>
+            {
+                var value = prop.GetValue(o);
+                if (value == null)
+                {
+                    bw.Write(0);
+                    return;
+                }
+                var valueSerializer = RequestFieldSerializer(value.GetType(), null);
+                valueSerializer.Write(bw, value);
+            };
+
+            Action<object, BinaryReader> deserialize = (o, br) =>
+            {
+                prop.SetValue(o, serializer.Read(br));
+            };
+
+            return (serialize, deserialize);
+        }
+
+        return (
+            (bw, o) => serializer.Write(bw, prop.GetValue(o)),
+            (o, br) => prop.SetValue(o, serializer.Read(br))
+        );
+    }
 
     public static IFieldSerializer RequestFieldSerializer(Type type, PropertyInfo? prop)
     {
@@ -90,28 +120,56 @@ public class PacketSerializer
 
         if (FieldSerializers.TryGetValue(type, out var cachedSerializer))
             return cachedSerializer;
+
         var serializer = CreateSerializer(type);
         FieldSerializers[type] = serializer;
         return serializer;
     }
 
-    private static IFieldSerializer CreateSerializer(Type type) => type switch
+    private static IFieldSerializer CreateSerializer(Type type)
     {
-        _ when type.IsPrimitive || type.IsEnum => CreateGenericSerializer(typeof(PrimitiveFieldSerializer<>), type),
+        if (Nullable.GetUnderlyingType(type) is { } underlyingType)
+            return CreateGenericSerializer(typeof(NullableSerializer<>), underlyingType);
 
-        _ when type.IsArray => CreateGenericSerializer(typeof(ArraySerializer<>), type.GetElementType()!),
+        if (type.IsPrimitive || type.IsEnum)
+            return CreateGenericSerializer(typeof(PrimitiveFieldSerializer<>), type);
 
-        _ when type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)
-            => CreateGenericSerializer(typeof(ListSerializer<>), type.GetGenericArguments()[0]),
+        if (type.IsArray)
+            return CreateGenericSerializer(typeof(ArraySerializer<>), type.GetElementType()!);
 
-        _ when Nullable.GetUnderlyingType(type) is { } underlyingType
-            => CreateGenericSerializer(typeof(NullableSerializer<>), underlyingType),
+        if (type.IsGenericType)
+        {
+            var genericType = type.GetGenericTypeDefinition();
 
-        _ when type.IsClass && type != typeof(object)
-            => CreateGenericSerializer(typeof(ClassSerializer<>), type),
+            if (IsGenericTypeOf(genericType, typeof(IDictionary<,>)))
+                return CreateDictionarySerializer(type.GetGenericArguments());
 
-        _ => throw new NotSupportedException($"Type {type} is not supported for serialization")
-    };
+            if (IsGenericTypeOf(genericType, typeof(ICollection<>)))
+                return CreateGenericSerializer(typeof(CollectionSerializer<>), type.GetGenericArguments()[0]);
+
+            if (IsGenericTypeOf(genericType, typeof(IEnumerable<>)))
+                return CreateGenericSerializer(typeof(EnumerableSerializer<>), type.GetGenericArguments()[0]);
+        }
+
+        if (IsGenericInterfaceImplementation(type, typeof(IDictionary<,>)))
+            return CreateDictionarySerializer(type.GetGenericArguments());
+
+        if (IsGenericInterfaceImplementation(type, typeof(ICollection<>)))
+            return CreateGenericSerializer(typeof(CollectionSerializer<>), type.GetGenericArguments()[0]);
+
+        if (IsGenericInterfaceImplementation(type, typeof(IEnumerable<>)))
+            return CreateGenericSerializer(typeof(EnumerableSerializer<>), type.GetGenericArguments()[0]);
+
+        if (type.IsClass && type != typeof(object))
+            return CreateGenericSerializer(typeof(ClassSerializer<>), type);
+
+        throw new NotSupportedException($"Type {type} is not supported for serialization");
+    }
+
+    private static IFieldSerializer CreateDictionarySerializer(Type[] genericArgs)
+    {
+        return CreateGenericSerializer2(typeof(DictionarySerializer<,>), genericArgs[0], genericArgs[1]);
+    }
 
     private static IFieldSerializer CreateGenericSerializer(Type genericSerializerType, Type typeArgument)
     {
@@ -119,16 +177,55 @@ public class PacketSerializer
         return (IFieldSerializer)Activator.CreateInstance(concreteType)!;
     }
 
+    private static IFieldSerializer CreateGenericSerializer2(Type genericSerializerType, Type typeArgument1, Type typeArgument2)
+    {
+        var concreteType = genericSerializerType.MakeGenericType(typeArgument1, typeArgument2);
+        return (IFieldSerializer)Activator.CreateInstance(concreteType)!;
+    }
+
+    private static bool IsGenericTypeOf(Type genericType, Type targetGenericType)
+    {
+        return genericType == targetGenericType;
+    }
+
+    private static bool IsGenericInterfaceImplementation(Type type, Type genericInterface)
+    {
+        if (!type.IsGenericType) return false;
+
+        if (type.GetGenericTypeDefinition() == genericInterface)
+            return true;
+
+        return type.GetInterfaces().Any(i =>
+            i.IsGenericType && i.GetGenericTypeDefinition() == genericInterface);
+    }
+
+    private static bool IsCollectionType(Type type)
+    {
+        if (!type.IsGenericType) return false;
+
+        var genericType = type.GetGenericTypeDefinition();
+
+        return IsGenericTypeOf(genericType, typeof(IDictionary<,>))
+            || IsGenericTypeOf(genericType, typeof(ICollection<>))
+            || IsGenericTypeOf(genericType, typeof(IEnumerable<>))
+            || type.GetInterfaces().Any(i =>
+                i.IsGenericType && (
+                    i.GetGenericTypeDefinition() == typeof(IDictionary<,>) ||
+                    i.GetGenericTypeDefinition() == typeof(ICollection<>) ||
+                    i.GetGenericTypeDefinition() == typeof(IEnumerable<>)));
+    }
+
     public byte[] Serialize(INetPacket packet)
     {
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
+
         bw.Write((short)0);
         bw.Write((byte)packet.PacketID);
 
-        if (_serializers.TryGetValue(packet.GetType(), out var f))
+        if (_serializers.TryGetValue(packet.GetType(), out var serializer))
         {
-            f(bw, packet);
+            serializer(bw, packet);
             var length = (short)ms.Position;
             ms.Position = 0;
             bw.Write(length);
@@ -136,7 +233,7 @@ public class PacketSerializer
             return ms.ToArray();
         }
 
-        return [];
+        return Array.Empty<byte>();
     }
 
     public INetPacket? Deserialize(BinaryReader br)
@@ -144,11 +241,9 @@ public class PacketSerializer
         var length = br.ReadInt16();
         var packetType = (PacketType)br.ReadByte();
 
-
-
-        if (_deserializers.TryGetValue(packetType, out var f))
+        if (_deserializers.TryGetValue(packetType, out var deserializer))
         {
-            return f(br) as INetPacket;
+            return deserializer(br) as INetPacket;
         }
 
         return null;

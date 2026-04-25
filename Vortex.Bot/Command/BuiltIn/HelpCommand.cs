@@ -2,7 +2,7 @@ using Vortex.Bot.Attributes;
 using Vortex.Bot.Command;
 using Vortex.Bot.Utility.Images;
 
-namespace Vortex.Bot.Commands;
+namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("help", "帮助", "菜单")]
 [CommandType(CommandType.Group | CommandType.Friend)]

@@ -25,7 +25,7 @@ public static class ServerInfoCommand
 
         if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换服务器 <名称>' 选择要操作的服务器!");
+            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -35,7 +35,7 @@ public static class ServerInfoCommand
         {
             var tableBuilder = new TableBuilder()
                 .SetHeader("插件名称", "说明", "作者")
-                .SetTitle($"[{server.Config.Name}] 插件列表")
+                .SetTitle($"{server.Config.Name} 插件列表")
                 .SetMemberUin((uint)args.SenderUin);
 
             if (status.Plugins != null)

@@ -1,8 +1,8 @@
 namespace Vortex.Protocol.Serialization.Serializers;
 
-internal class ListSerializer<T> : FieldSerializer<List<T>>
+internal class CollectionSerializer<T> : FieldSerializer<ICollection<T>>
 {
-    protected override List<T> ReadOverride(BinaryReader br)
+    protected override ICollection<T> ReadOverride(BinaryReader br)
     {
         var length = br.ReadInt32();
         var list = new List<T>(length);
@@ -16,7 +16,7 @@ internal class ListSerializer<T> : FieldSerializer<List<T>>
         return list;
     }
 
-    protected override void WriteOverride(BinaryWriter bw, List<T> value)
+    protected override void WriteOverride(BinaryWriter bw, ICollection<T> value)
     {
         bw.Write(value.Count);
         var elementSerializer = PacketSerializer.RequestFieldSerializer(typeof(T), null);

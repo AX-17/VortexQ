@@ -157,7 +157,7 @@ public class VortexClient(SocketConfig config) : IDisposable
         }
         catch (Exception ex)
         {
-            TShockAPI.TShock.Log.ConsoleError($"[Vortex.Adapter] 发送数据包失败: {ex.Message}");
+            TShockAPI.TShock.Log.ConsoleError($"[Vortex.Adapter] 发送数据包失败: {ex.ToString()}");
         }
     }
 

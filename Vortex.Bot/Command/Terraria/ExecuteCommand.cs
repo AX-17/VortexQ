@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Core.Service;
 
 namespace Vortex.Bot.Command.Terraria;

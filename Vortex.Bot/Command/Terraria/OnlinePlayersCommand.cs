@@ -1,18 +1,19 @@
 using System.Text;
+using Lagrange.Core.Message;
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Core.Service;
+using Vortex.Bot.Extension;
 
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("在线", "online", "players")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.online")]
 public static class OnlinePlayersCommand
 {
     [Main]
-    public static async Task ShowOnlinePlayers(CommandArgs args)
+    public static async Task ShowOnlinePlayers(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -21,7 +22,7 @@ public static class OnlinePlayersCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
+        var groupId = args.GroupUin;
         var servers = groupId > 0
             ? [.. serverManager.GetServersByGroup(groupId)]
             : serverManager.GetAllServers().ToList();
@@ -55,7 +56,8 @@ public static class OnlinePlayersCommand
             }
             sb.AppendLine();
         }
-
+        //var msg = BotMessage.CreateCustomGroup(groupId, args.SenderUin, args.Member?.Nickname ?? "", DateTime.Now, MessageBuilder.Create().Text(sb.ToString().Trim()).Build());
+        //await args.ReplyAsync(MessageBuilder.Create().MultiMsg([msg]).Build());
         await args.ReplyAsync(sb.ToString().Trim());
     }
 }

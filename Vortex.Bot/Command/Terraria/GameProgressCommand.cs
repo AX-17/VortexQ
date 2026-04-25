@@ -25,7 +25,7 @@ public static class GameProgressCommand
 
         if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换服务器 <名称>' 选择要操作的服务器!");
+            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 

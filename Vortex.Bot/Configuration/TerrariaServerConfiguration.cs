@@ -6,7 +6,6 @@ public class TerrariaServerEnity
     public string IP { get; set; } = "";
     public ushort Port { get; set; } = 7777;
     public ushort DisplayPort { get; set; } = 7777;
-    public string Token { get; set; } = "";
     public string DefaultGroup { get; set; } = "default";
     public int RegisterMaxCount { get; set; } = 1;
     public int RegisterNameMax { get; set; } = 10;
