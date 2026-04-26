@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("进度", "progress")]
+[HelpText("查看游戏进度")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.progress")]
 public static class GameProgressCommand

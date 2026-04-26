@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("ban", "封禁")]
+[HelpText("封禁/解封服务器玩家")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.ban")]
 public static class BanPlayerCommand

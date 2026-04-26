@@ -4,6 +4,7 @@ using Vortex.Bot.Attributes;
 namespace Vortex.Bot.Command.Misc;
 
 [Command("wiki")]
+[HelpText("泰拉瑞亚Wiki搜索")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.misc.wiki")]
 public static class WikiCommand

@@ -5,16 +5,11 @@ namespace Vortex.Bot.Command;
 
 internal abstract class CommandBase
 {
-    protected internal readonly struct ParseResult(CommandBase current, int num)
-    {
-        public readonly int Unmatched = num;
-        public readonly CommandBase Current = current;
-    }
+    private static readonly string NoPermissionMessage = "你没有权限执行此指令。";
 
-    private static string NoPerm => "你没有权限执行此指令。";
-
-    protected string[] Permissions = [];
-    protected string? Info;
+    protected string[] Permissions { get; init; }
+    protected string? Info { get; set; }
+    public string? HelpText { get; init; }
 
     public abstract Task<ParseResult> TryParseAsync(CommandArgs args, int current, string commandName);
 
@@ -23,6 +18,7 @@ internal abstract class CommandBase
     protected CommandBase(MemberInfo member)
     {
         Permissions = [.. member.GetCustomAttributes<PermissionAttribute>().SelectMany(p => p.Permissions)];
+        HelpText = member.GetCustomAttribute<HelpTextAttribute>()?.Description;
     }
 
     protected CommandBase()
@@ -30,7 +26,7 @@ internal abstract class CommandBase
         Permissions = [];
     }
 
-    public bool CanExec(CommandArgs args)
+    public bool CanExecute(CommandArgs args)
     {
         if (Permissions.Length == 0)
             return true;
@@ -58,7 +54,7 @@ internal abstract class CommandBase
                 return new PermissionCheckResult
                 {
                     Result = PermissionResult.Denied,
-                    DenyMessage = $"{NoPerm} 缺少权限: {string.Join(", ", missingPermissions)}"
+                    DenyMessage = $"{NoPermissionMessage} 缺少权限: {string.Join(", ", missingPermissions)}"
                 };
             }
         }
@@ -75,7 +71,7 @@ internal abstract class CommandBase
             var missingPermissions = GetMissingPermissions(args);
             if (missingPermissions.Length > 0)
             {
-                errorMessage = $"{NoPerm} 缺少权限: {string.Join(", ", missingPermissions)}";
+                errorMessage = $"{NoPermissionMessage} 缺少权限: {string.Join(", ", missingPermissions)}";
                 return false;
             }
         }
@@ -83,5 +79,5 @@ internal abstract class CommandBase
         return true;
     }
 
-    protected ParseResult GetResult(int num) => new(this, num);
+    protected ParseResult CreateResult(int unmatched) => new(this, unmatched);
 }

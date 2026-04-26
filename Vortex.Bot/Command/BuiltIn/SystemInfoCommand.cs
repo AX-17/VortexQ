@@ -7,6 +7,7 @@ namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("系统信息")]
 [Alias("sysinfo", "system")]
+[HelpText("查看服务器系统信息")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.system.info")]
 public static class SystemInfoCommand

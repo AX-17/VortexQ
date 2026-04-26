@@ -6,6 +6,7 @@ using Vortex.Bot.Utility.Images;
 namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("me", "我的信息", "info")]
+[HelpText("查看个人信息")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.selfinfo")]
 public static class SelfInfoCommand

@@ -13,70 +13,64 @@ internal sealed class HelpTreeBuilder(string rootPath)
         _sb.AppendLine("📋 可用指令:");
         _sb.AppendLine();
 
-        BuildCommandNode(command, _rootPath, "", true);
-        return _sb.ToString().TrimEnd();
-    }
-
-    private void BuildCommandNode(Command command, string currentPath, string indent, bool isLast)
-    {
-        var children = GetVisibleChildren(command);
-        if (children.Count == 0)
-        {
-            BuildLeafNode(command, currentPath, indent, isLast);
-            return;
-        }
-
-        for (int i = 0; i < children.Count; i++)
-        {
-            var child = children[i];
-            var isLastChild = i == children.Count - 1;
-            BuildChildNode(child, currentPath, indent, isLastChild);
-        }
-    }
-
-    private void BuildLeafNode(Command command, string currentPath, string indent, bool isLast)
-    {
+        // 首先显示命令本身的 Main 方法
         var mainExecutor = command.GetMainCommands()
             .OfType<CommandExecutor>()
             .FirstOrDefault();
+        
+        if (mainExecutor != null)
+        {
+            var helpText = command.HelpText ?? mainExecutor.HelpText;
+            var node = new HelpNode(
+                rootPath,
+                mainExecutor.ParameterInfo,
+                helpText
+            );
+            BuildCommandLine(node, "", true);
+        }
 
-        if (mainExecutor == null) return;
-
-        var branch = isLast ? "└── " : "├── ";
-        var paramInfo = mainExecutor.GetParamInfo();
-        _sb.AppendLine($"{indent}{branch}{currentPath}{paramInfo}");
+        // 然后显示子命令
+        var children = GetVisibleChildren(command, rootPath);
+        
+        for (int i = 0; i < children.Count; i++)
+        {
+            var child = children[i];
+            var isLast = i == children.Count - 1;
+            BuildCommandLine(child, "", isLast);
+        }
+        
+        return _sb.ToString().TrimEnd();
     }
 
-    private void BuildChildNode(HelpNode child, string parentPath, string indent, bool isLast)
+    private void BuildCommandLine(HelpNode node, string indent, bool isLast)
     {
         var branch = isLast ? "└── " : "├── ";
-        var childIndent = isLast ? "    " : "│   ";
-
-        if (child.IsLeaf)
+        
+        // 构建命令行：路径 + 参数
+        var line = $"{indent}{branch}{node.FullPath}{node.ParamInfo}";
+        
+        // 如果有帮助文本，添加到同一行
+        if (!string.IsNullOrEmpty(node.HelpText))
         {
-            _sb.AppendLine($"{indent}{branch}{child.DisplayName}{child.ParamInfo}");
+            line += $" - {node.HelpText}";
         }
-        else
+        
+        _sb.AppendLine(line);
+        
+        if (node.SubCommands.Count > 0)
         {
-            _sb.AppendLine($"{indent}{branch}{child.DisplayName}{child.ParamInfo}");
-            BuildCommandNode(child.Command!, child.FullPath, indent + childIndent, isLast);
+            var childIndent = indent + (isLast ? "    " : "│   ");
+            
+            for (int i = 0; i < node.SubCommands.Count; i++)
+            {
+                var child = node.SubCommands[i];
+                var isLastChild = i == node.SubCommands.Count - 1;
+                BuildCommandLine(child, childIndent, isLastChild);
+            }
         }
     }
 
-    private static List<HelpNode> GetVisibleChildren(Command command)
-    {
-        var children = new List<HelpNode>();
-
-        var namedChildren = GetNamedSubCommands(command);
-        children.AddRange(namedChildren);
-
-        var nestedChildren = GetNestedSubCommands(command);
-        children.AddRange(nestedChildren);
-
-        return children;
-    }
-
-    private static List<HelpNode> GetNamedSubCommands(Command command)
+    private List<HelpNode> GetVisibleChildren(Command command, string parentPath)
     {
         var nodes = new List<HelpNode>();
 
@@ -92,15 +86,15 @@ internal sealed class HelpTreeBuilder(string rootPath)
 
         foreach (var item in grouped)
         {
-            var displayName = string.Join(" / ", item.Names);
             var firstName = item.Names.First();
-
+            var fullPath = string.IsNullOrEmpty(parentPath) ? firstName : $"{parentPath} {firstName}";
+            
             if (item.Command is CommandExecutor executor)
             {
                 nodes.Add(new HelpNode(
-                    displayName,
-                    firstName,
-                    executor.GetParamInfo()
+                    fullPath,
+                    executor.ParameterInfo,
+                    executor.HelpText
                 ));
             }
             else if (item.Command is Command subCmd)
@@ -108,49 +102,36 @@ internal sealed class HelpTreeBuilder(string rootPath)
                 var mainExecutor = subCmd.GetMainCommands()
                     .OfType<CommandExecutor>()
                     .FirstOrDefault();
-                var paramInfo = mainExecutor?.GetParamInfo() ?? "";
-
+                var paramInfo = mainExecutor?.ParameterInfo ?? "";
+                var helpText = subCmd.HelpText ?? mainExecutor?.HelpText;
+                
+                var subChildren = GetVisibleChildren(subCmd, fullPath);
+                
                 nodes.Add(new HelpNode(
-                    displayName,
-                    firstName,
+                    fullPath,
                     paramInfo,
-                    subCmd
+                    helpText,
+                    subChildren
                 ));
             }
         }
 
         return nodes;
     }
-
-    private static List<HelpNode> GetNestedSubCommands(Command command)
-    {
-        var nodes = new List<HelpNode>();
-
-        var nestedCommands = command.GetNestedCommands();
-
-        foreach (var subCmd in nestedCommands)
-        {
-            nodes.Add(new HelpNode(
-                "",
-                "",
-                "",
-                subCmd
-            ));
-        }
-
-        return nodes;
-    }
 }
 
-internal sealed class HelpNode(string displayName, string fullPath, string paramInfo, Command? command = null)
+internal sealed class HelpNode
 {
-    public string DisplayName { get; } = displayName;
+    public string FullPath { get; }
+    public string ParamInfo { get; }
+    public string? HelpText { get; }
+    public List<HelpNode> SubCommands { get; }
 
-    public string FullPath { get; } = fullPath;
-
-    public string ParamInfo { get; } = paramInfo;
-
-    public bool IsLeaf => Command == null;
-
-    public Command? Command { get; } = command;
+    public HelpNode(string fullPath, string paramInfo, string? helpText = null, List<HelpNode>? subCommands = null)
+    {
+        FullPath = fullPath;
+        ParamInfo = paramInfo;
+        HelpText = helpText;
+        SubCommands = subCommands ?? new List<HelpNode>();
+    }
 }

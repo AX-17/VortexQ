@@ -8,6 +8,7 @@ using Vortex.Bot.Extension;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("在线", "online", "players")]
+[HelpText("查看在线玩家")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.online")]
 public static class OnlinePlayersCommand

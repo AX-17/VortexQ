@@ -4,6 +4,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Currencys;
 
 [Command("金币", "money", "currency")]
+[HelpText("金币系统")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.currency")]
 public static class CurrencyCommand

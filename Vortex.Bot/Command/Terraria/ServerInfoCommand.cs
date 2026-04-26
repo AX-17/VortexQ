@@ -7,6 +7,7 @@ using Vortex.Bot.Utility.Images;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("服务器信息", "serverinfo", "svinfo")]
+[HelpText("查看服务器信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.info")]
 public static class ServerInfoCommand

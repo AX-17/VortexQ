@@ -4,6 +4,7 @@ using Vortex.Bot.Events;
 namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("reload")]
+[HelpText("重载配置文件")]
 [Permission("vortex.admin")]
 public static class ReloadCommand
 {

@@ -52,3 +52,14 @@ public class ParamAttribute(string description) : Attribute
 {
     public string Description { get; } = description;
 }
+
+[AttributeUsage(AttributeTargets.Class)]
+public class SkipHelpAttribute : Attribute
+{
+}
+
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public class HelpTextAttribute(string description) : Attribute
+{
+    public string Description { get; } = description;
+}

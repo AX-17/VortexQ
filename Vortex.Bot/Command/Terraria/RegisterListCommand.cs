@@ -6,6 +6,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("注册列表", "reglist")]
+[HelpText("查看自己的注册列表")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.registerlist")]
 public static class RegisterListCommand

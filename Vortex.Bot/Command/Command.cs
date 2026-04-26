@@ -5,49 +5,37 @@ namespace Vortex.Bot.Command;
 
 internal sealed class Command : CommandBase
 {
-    private readonly Dictionary<string, List<CommandBase>> _dict = [];
-    private readonly List<CommandBase> _main = [];
+    private readonly Dictionary<string, List<CommandBase>> _namedCommands = [];
+    private readonly List<CommandBase> _mainCommands = [];
     private readonly string _infoPrefix;
     private readonly string _name;
+    private readonly bool _skipHelp;
 
-    public Command(MemberInfo type, string name, string infoPrefix) : base(type)
+    public Command(MemberInfo type, string name, string infoPrefix, bool skipHelp = false) : base(type)
     {
         _infoPrefix = infoPrefix;
         _name = name;
+        _skipHelp = skipHelp;
         Info = infoPrefix;
     }
 
-    #region 内部集合访问器（供 Help 系统使用）
-
-    internal IReadOnlyDictionary<string, List<CommandBase>> GetNamedCommands() => _dict;
-
-    internal IEnumerable<CommandBase> GetMainCommands() => _main;
-
-    internal IEnumerable<Command> GetNestedCommands() => _main.OfType<Command>();
-
-    #endregion
-
     public void PostBuildTree()
     {
-        _main.Add(new HelpCommand(this, _infoPrefix));
+        _mainCommands.Add(new HelpCommand(this, _infoPrefix));
+
         var firstExecutor = GetAllSubCommands()
             .OfType<CommandExecutor>()
             .FirstOrDefault();
 
         if (firstExecutor != null)
         {
-            var paramInfo = firstExecutor.GetParamInfo();
+            var paramInfo = firstExecutor.ParameterInfo;
             if (!string.IsNullOrEmpty(paramInfo))
             {
-                var hasMainCommand = _main.Any(sub => sub is CommandExecutor);
-                if (hasMainCommand)
-                {
-                    Info = $"{_infoPrefix}{paramInfo}";
-                }
-                else
-                {
-                    Info = $"{_infoPrefix} <...>{paramInfo}";
-                }
+                var hasMainCommand = _mainCommands.Any(sub => sub is CommandExecutor);
+                Info = hasMainCommand
+                    ? $"{_infoPrefix}{paramInfo}"
+                    : $"{_infoPrefix} <...>{paramInfo}";
             }
         }
     }
@@ -56,15 +44,15 @@ internal sealed class Command : CommandBase
     {
         if (string.IsNullOrEmpty(cmd))
         {
-            _main.Add(sub);
+            _mainCommands.Add(sub);
         }
-        else if (_dict.TryGetValue(cmd, out var lst))
+        else if (_namedCommands.TryGetValue(cmd, out var list))
         {
-            lst.Add(sub);
+            list.Add(sub);
         }
         else
         {
-            _dict.Add(cmd, [sub]);
+            _namedCommands.Add(cmd, [sub]);
         }
     }
 
@@ -74,39 +62,22 @@ internal sealed class Command : CommandBase
         if (permResult.Result != PermissionResult.Granted)
         {
             await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
-            return GetResult(0);
+            return CreateResult(0);
         }
 
-        var most = GetResult(args.Params.Count - current + 1);
-        if (current < args.Params.Count && args.Params[current] == "help")
+        var bestMatch = CreateResult(args.Params.Count - current + 1);
+
+        if (current < args.Params.Count && args.Params[current] == "help" && !_skipHelp)
         {
-            if (_dict.TryGetValue("help", out var helpSubs))
-            {
-                foreach (var sub in helpSubs)
-                {
-                    var res = await sub.TryParseAsync(args, current + 1, commandName);
-                    if (res.Unmatched == 0)
-                        return res;
+            var helpResult = await TryParseHelpAsync(args, current, commandName);
+            if (helpResult.Unmatched == 0)
+                return helpResult;
 
-                    if (res.Unmatched < most.Unmatched)
-                        most = res;
-                }
-            }
-
-            foreach (var sub in _main)
-            {
-                if (sub is HelpCommand)
-                {
-                    var res = await sub.TryParseAsync(args, current, commandName);
-                    if (res.Unmatched == 0)
-                        return res;
-                }
-            }
-
-            return most;
+            if (helpResult.Unmatched < bestMatch.Unmatched)
+                bestMatch = helpResult;
         }
 
-        if (current < args.Params.Count && _dict.TryGetValue(args.Params[current], out var subs))
+        if (current < args.Params.Count && _namedCommands.TryGetValue(args.Params[current], out var subs))
         {
             foreach (var sub in subs)
             {
@@ -114,88 +85,83 @@ internal sealed class Command : CommandBase
                 if (res.Unmatched == 0)
                     return res;
 
-                if (res.Unmatched < most.Unmatched)
-                    most = res;
+                if (res.Unmatched < bestMatch.Unmatched)
+                    bestMatch = res;
             }
         }
 
-        foreach (var sub in _main)
+        foreach (var sub in _mainCommands)
         {
             var res = await sub.TryParseAsync(args, current, commandName);
             if (res.Unmatched == 0)
                 return res;
 
-            if (res.Unmatched < most.Unmatched)
-                most = res;
-        }
-        if (most.Unmatched > 0 && current >= args.Params.Count && _dict.Count > 0)
-        {
-            await ShowSubCommandsHint(args, commandName);
-            return GetResult(0);
+            if (res.Unmatched < bestMatch.Unmatched)
+                bestMatch = res;
         }
 
-        return most;
+        if (bestMatch.Unmatched > 0 && current >= args.Params.Count && _namedCommands.Count > 0)
+        {
+            await ShowSubCommandsHint(args, commandName);
+            return CreateResult(0);
+        }
+
+        return bestMatch;
+    }
+
+    private async Task<ParseResult> TryParseHelpAsync(CommandArgs args, int current, string commandName)
+    {
+        var bestMatch = CreateResult(args.Params.Count - current + 1);
+
+        if (_namedCommands.TryGetValue("help", out var helpSubs))
+        {
+            foreach (var sub in helpSubs)
+            {
+                var res = await sub.TryParseAsync(args, current + 1, commandName);
+                if (res.Unmatched == 0)
+                    return res;
+
+                if (res.Unmatched < bestMatch.Unmatched)
+                    bestMatch = res;
+            }
+        }
+
+        foreach (var sub in _mainCommands)
+        {
+            if (sub is HelpCommand)
+            {
+                var res = await sub.TryParseAsync(args, current, commandName);
+                if (res.Unmatched == 0)
+                    return res;
+
+                if (res.Unmatched < bestMatch.Unmatched)
+                    bestMatch = res;
+            }
+        }
+
+        return bestMatch;
     }
 
     private async Task ShowSubCommandsHint(CommandArgs args, string commandName)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("❌ 指令不完整，请指定子命令");
-
-        var prefix = args.CommandPrefix + commandName;
-        for (int i = 0; i < args.Params.Count; i++)
-        {
-            prefix += " " + args.Params[i];
-        }
-
-        sb.AppendLine($"当前路径: {prefix}");
-        sb.AppendLine();
-        sb.AppendLine("📋 可用子命令:");
-        var availableSubCommands = new List<string>();
-
-        foreach (var (cmdName, subs) in _dict)
-        {
-            if (cmdName == "help") continue;
-
-            foreach (var sub in subs)
-            {
-                if (sub.CanExec(args))
-                {
-                    availableSubCommands.Add(cmdName);
-                    break;
-                }
-            }
-        }
-
-        var hasMainExecutor = _main.Any(m => m is CommandExecutor);
-
-        if (availableSubCommands.Count == 0 && !hasMainExecutor)
-        {
-            sb.AppendLine("  (无可用子命令)");
-        }
-        else
-        {
-            foreach (var cmdName in availableSubCommands.OrderBy(n => n))
-            {
-                sb.AppendLine($"  • {cmdName}");
-            }
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("💡 提示:");
-        sb.AppendLine($"使用 '{prefix} help' 查看详细帮助");
-        sb.AppendLine("检查命令拼写是否正确");
-
-        await args.ReplyAsync(sb.ToString().TrimEnd());
+        var message = ErrorMessageBuilder.BuildIncompleteCommandHint(this, args, commandName);
+        await args.ReplyAsync(message);
     }
 
     public string GetName() => _name;
 
-    public IEnumerable<CommandBase> GetAllSubCommands() => _dict.Values.SelectMany(subs => subs).Concat(_main).Distinct();
+    public IReadOnlyDictionary<string, List<CommandBase>> GetNamedCommands() => _namedCommands;
+
+    public IEnumerable<CommandBase> GetMainCommands() => _mainCommands;
+
+    public IEnumerable<Command> GetNestedCommands() => _mainCommands.OfType<Command>();
+
+    public IEnumerable<CommandBase> GetAllSubCommands() =>
+        _namedCommands.Values.SelectMany(subs => subs).Concat(_mainCommands).Distinct();
 
     public IEnumerable<(string Path, CommandBase Command)> GetAllCommandsWithPath(string parentPath)
     {
-        foreach (var (cmdName, subs) in _dict)
+        foreach (var (cmdName, subs) in _namedCommands)
         {
             var currentPath = string.IsNullOrEmpty(parentPath) ? cmdName : $"{parentPath} {cmdName}";
             foreach (var sub in subs)
@@ -204,27 +170,21 @@ internal sealed class Command : CommandBase
                 if (sub is Command cmd)
                 {
                     foreach (var nested in cmd.GetAllCommandsWithPath(currentPath))
-                    {
                         yield return nested;
-                    }
                 }
             }
         }
 
-        foreach (var sub in _main.Where(sub => sub is not HelpCommand))
+        foreach (var sub in _mainCommands.Where(sub => sub is not HelpCommand))
         {
             yield return (parentPath, sub);
             if (sub is Command cmd)
             {
                 foreach (var nested in cmd.GetAllCommandsWithPath(parentPath))
-                {
                     yield return nested;
-                }
             }
         }
     }
-
-    #region Help 系统
 
     private sealed class HelpCommand : CommandBase
     {
@@ -241,27 +201,28 @@ internal sealed class Command : CommandBase
         {
             if (!ValidateHelpCommand(args, current, out var errorResult))
                 return errorResult;
-            var commandPath = BuildCommandPath(args, current);
 
             var targetCommand = FindTargetCommand(args, current);
+            var commandPath = BuildCommandPath(args, current);
             var helpText = BuildHelpText(targetCommand ?? _rootCommand, commandPath);
-            await args.ReplyAsync(helpText);
 
-            return GetResult(0);
+            await args.ReplyAsync(helpText);
+            return CreateResult(0);
         }
 
         private bool ValidateHelpCommand(CommandArgs args, int current, out ParseResult errorResult)
         {
-            errorResult = GetResult(0);
+            errorResult = CreateResult(0);
 
             if (current != args.Params.Count - 1)
             {
-                errorResult = GetResult(Math.Abs(args.Params.Count - 1 - current));
+                errorResult = CreateResult(Math.Abs(args.Params.Count - 1 - current));
                 return false;
             }
+
             if (args.Params[current] != "help")
             {
-                errorResult = GetResult(1);
+                errorResult = CreateResult(1);
                 return false;
             }
 
@@ -273,9 +234,7 @@ internal sealed class Command : CommandBase
             var path = args.CommandPrefix + args.CommandName;
 
             for (int i = 0; i < current; i++)
-            {
                 path += " " + args.Params[i];
-            }
 
             return path;
         }
@@ -294,23 +253,18 @@ internal sealed class Command : CommandBase
                     .FirstOrDefault();
 
                 if (sub is Command cmd)
-                {
                     target = cmd;
-                }
                 else
-                {
                     return null;
-                }
             }
 
             return target;
         }
+
         private static string BuildHelpText(Command command, string commandPath)
         {
             var builder = new HelpTreeBuilder(commandPath);
             return builder.Build(command);
         }
     }
-
-    #endregion
 }

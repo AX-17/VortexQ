@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("重置服务器", "reset")]
+[HelpText("重置游戏服务器地图")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.reset")]
 public static class ServerResetCommand

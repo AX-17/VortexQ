@@ -4,6 +4,7 @@ using Vortex.Bot.Attributes;
 namespace Vortex.Bot.Command.Misc;
 
 [Command("缩写", "abbr")]
+[HelpText("查询网络缩写含义")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.misc.abbreviation")]
 public static class AbbreviationCommand

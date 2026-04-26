@@ -5,6 +5,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("sign", "签到")]
+[HelpText("每日签到获取金币")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.sign")]
 public static class SignCommand

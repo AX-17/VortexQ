@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("重启服务器", "restart")]
+[HelpText("重启游戏服务器")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.restart")]
 public static class ServerRestartCommand

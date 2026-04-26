@@ -3,9 +3,56 @@ using System.Globalization;
 
 namespace Vortex.Bot.Command;
 
+internal delegate bool ArgumentParser(string arg, [MaybeNullWhen(false)] out object obj);
+
 internal static class CommandParser
 {
-    public delegate bool Parser(string arg, [MaybeNullWhen(false)] out object obj);
+    private static readonly Dictionary<Type, ArgumentParser> Parsers = new()
+    {
+        [typeof(bool)] = TryParseBool,
+        [typeof(uint)] = TryParseUint,
+        [typeof(int)] = TryParseInt,
+        [typeof(long)] = TryParseLong,
+        [typeof(ulong)] = TryParseUlong,
+        [typeof(string)] = TryParseString,
+        [typeof(DateTime)] = TryParseDateTime,
+        [typeof(double)] = TryParseDouble,
+        [typeof(float)] = TryParseFloat,
+    };
+
+    private static readonly Dictionary<Type, string> FriendlyNames = new()
+    {
+        [typeof(bool)] = "bool",
+        [typeof(uint)] = "uint",
+        [typeof(int)] = "int",
+        [typeof(long)] = "long",
+        [typeof(ulong)] = "ulong",
+        [typeof(string)] = "str",
+        [typeof(DateTime)] = "date",
+        [typeof(double)] = "double",
+        [typeof(float)] = "float",
+    };
+
+    public static ArgumentParser GetParser(Type type)
+    {
+        if (Parsers.TryGetValue(type, out var parser))
+            return parser;
+
+        throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
+    }
+
+    public static string GetFriendlyName(Type type)
+    {
+        if (FriendlyNames.TryGetValue(type, out var name))
+            return name;
+
+        return type.Name.ToLower();
+    }
+
+    public static bool IsSupportedType(Type type)
+    {
+        return Parsers.ContainsKey(type);
+    }
 
     private static bool TryParseBool(string arg, out object obj)
     {
@@ -67,54 +114,5 @@ internal static class CommandParser
         var result = ulong.TryParse(arg, out var t);
         obj = t;
         return result;
-    }
-
-    private static readonly Dictionary<Type, Parser> Parsers = new()
-    {
-        [typeof(bool)] = TryParseBool,
-        [typeof(uint)] = TryParseUint,
-        [typeof(int)] = TryParseInt,
-        [typeof(long)] = TryParseLong,
-        [typeof(ulong)] = TryParseUlong,
-        [typeof(string)] = TryParseString,
-        [typeof(DateTime)] = TryParseDateTime,
-        [typeof(double)] = TryParseDouble,
-        [typeof(float)] = TryParseFloat,
-    };
-
-    private static readonly Dictionary<Type, string> FriendlyNames = new()
-    {
-        [typeof(bool)] = "bool",
-        [typeof(uint)] = "uint",
-        [typeof(int)] = "int",
-        [typeof(long)] = "long",
-        [typeof(ulong)] = "ulong",
-        [typeof(string)] = "str",
-        [typeof(DateTime)] = "date",
-        [typeof(double)] = "double",
-        [typeof(float)] = "float",
-    };
-
-    public static Parser GetParser(Type type)
-    {
-        if (Parsers.TryGetValue(type, out var parser))
-        {
-            return parser;
-        }
-        throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
-    }
-
-    public static string GetFriendlyName(Type type)
-    {
-        if (FriendlyNames.TryGetValue(type, out var name))
-        {
-            return name;
-        }
-        return type.Name.ToLower();
-    }
-
-    public static bool IsSupportedType(Type type)
-    {
-        return Parsers.ContainsKey(type);
     }
 }

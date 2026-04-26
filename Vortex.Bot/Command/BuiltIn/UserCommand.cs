@@ -4,6 +4,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.BuiltIn;
 
 [Command("user")]
+[HelpText("用户系统")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.user")]
 public static class UserCommand

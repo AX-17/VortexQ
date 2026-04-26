@@ -5,6 +5,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Admin;
 
 [Command("account", "账户")]
+[HelpText("管理用户账户")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.admin.account")]
 public static class AccountAdminCommand

@@ -4,6 +4,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Admin;
 
 [Command("group", "权限组")]
+[HelpText("管理权限组")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.admin.group")]
 public static class GroupAdminCommand

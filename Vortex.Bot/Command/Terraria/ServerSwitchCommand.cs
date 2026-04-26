@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("切换", "switch", "use")]
+[HelpText("切换操作的服务器")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.switch")]
 public static class ServerSwitchCommand

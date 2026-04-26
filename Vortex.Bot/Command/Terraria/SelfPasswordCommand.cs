@@ -6,6 +6,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("我的密码", "mypwd", "password")]
+[HelpText("查看自己的游戏密码")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.selfpassword")]
 public static class SelfPasswordCommand

@@ -6,6 +6,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("tuser", "游戏用户")]
+[HelpText("管理游戏用户")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.useradmin")]
 public static class TerrariaUserAdminCommand

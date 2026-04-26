@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("玩家信息", "ui", "userinfo")]
+[HelpText("查看玩家详细信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.userinfo")]
 public static class TerrariaUserInfoCommand

@@ -6,6 +6,7 @@ using Vortex.Bot.Utility.Images;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("服务器列表", "servers", "svlist")]
+[HelpText("查看所有服务器列表")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.list")]
 public static class ServerListCommand

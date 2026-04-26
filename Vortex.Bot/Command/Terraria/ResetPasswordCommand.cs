@@ -7,6 +7,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("重置密码", "resetpwd")]
+[HelpText("重置游戏密码")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.resetpassword")]
 public static class ResetPasswordCommand

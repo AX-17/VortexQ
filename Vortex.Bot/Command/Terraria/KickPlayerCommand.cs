@@ -5,6 +5,7 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("踢出玩家", "kickplayer")]
+[HelpText("踢出服务器玩家")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.kick")]
 public static class KickPlayerCommand

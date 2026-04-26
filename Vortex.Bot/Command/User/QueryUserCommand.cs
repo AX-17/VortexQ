@@ -5,6 +5,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.User;
 
 [Command("查", "query")]
+[HelpText("查询用户信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.user.query")]
 public static class QueryUserCommand

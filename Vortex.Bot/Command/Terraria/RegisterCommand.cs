@@ -9,6 +9,7 @@ using Vortex.Bot.Utility;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("注册", "reg", "register")]
+[HelpText("注册游戏账号")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.register")]
 public static partial class RegisterCommand

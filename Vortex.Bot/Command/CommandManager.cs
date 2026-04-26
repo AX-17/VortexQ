@@ -2,6 +2,8 @@ using System.Reflection;
 using Lagrange.Core.Events.EventArgs;
 using Microsoft.Extensions.Logging;
 using Vortex.Bot.Attributes;
+using Vortex.Bot.Configuration;
+using Vortex.Bot.Extension;
 using Vortex.Bot.Utility;
 using Vortex.Protocol.Models;
 
@@ -15,7 +17,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
     public void AutoRegister(Assembly assembly)
     {
         var commandTypes = assembly.GetTypes()
-            .Where(static t => t.IsClass && t.GetCustomAttribute<CommandAttribute>() != null);
+            .Where(static t => t.IsClass && !t.IsNested && t.GetCustomAttribute<CommandAttribute>() != null);
 
         foreach (var type in commandTypes)
         {
@@ -47,7 +49,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
             }
             else
             {
-                _commands[key] = new CommandRegistration(tree, commandTypes);
+                _commands[key] = new CommandRegistration(tree, commandTypes, names);
                 _logger.LogInformation("Registered command '{Command}' with types: {Types}", name, commandTypes);
             }
         }
@@ -72,47 +74,16 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
         var parameters = CommandUtility.ParseParameters(commandText);
         if (parameters.Count == 0) return false;
 
-        var cmdConfig = context.Configuration.Command;
-        if (cmdConfig.EnablePrefix && !string.IsNullOrEmpty(cmdConfig.Prefix))
-        {
-            if (!parameters[0].StartsWith(cmdConfig.Prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogDebug("Command prefix mismatch: {Command}", parameters[0]);
-                return false;
-            }
-            parameters[0] = parameters[0][cmdConfig.Prefix.Length..];
-            if (string.IsNullOrEmpty(parameters[0]))
-            {
-                _logger.LogDebug("Empty command after removing prefix");
-                return false;
-            }
-        }
-
-        var cmdName = parameters[0].ToLowerInvariant();
-        if (!_commands.TryGetValue(cmdName, out var registration))
-        {
-            _logger.LogDebug("Command not found: {Command}", cmdName);
+        if (!TryExtractCommandName(parameters, context.Configuration.Command, out var cmdName, out var argsParams))
             return false;
-        }
 
-        if (!registration.Types.HasFlag(CommandType.Server))
-        {
-            _logger.LogDebug("Command '{Command}' does not support Server type", cmdName);
+        if (!TryGetCommandRegistration(cmdName, CommandType.Server, out var registration))
             return false;
-        }
 
-        var argsParams = parameters.Skip(1).ToList();
-        var args = new ServerCommandArgs(context, argsParams, player, sessionId)
-        {
-            CommandName = parameters[0],
-            CommandPrefix = cmdConfig.EnablePrefix ? cmdConfig.Prefix : string.Empty
-        };
+        var args = CreateServerArgs(context, argsParams, player, sessionId, parameters, context.Configuration.Command);
 
-        if (await CommandEvents.TriggerCommandExecuting(args, cmdName))
-        {
-            _logger.LogDebug("Command '{Command}' was intercepted by event", cmdName);
+        if (await TriggerCommandExecuting(args, cmdName))
             return true;
-        }
 
         await CommandHelper.ExecuteAsync(registration.Tree, args, cmdName);
         return true;
@@ -129,46 +100,18 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
         var parameters = CommandUtility.ParseParameters(commandText);
         if (parameters.Count == 0) return false;
 
-        var cmdConfig = context.Configuration.Command;
-        if (cmdConfig.EnablePrefix && !string.IsNullOrEmpty(cmdConfig.Prefix))
-        {
-            if (!parameters[0].StartsWith(cmdConfig.Prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogDebug("Command prefix mismatch: {Command}", parameters[0]);
-                return false;
-            }
-            parameters[0] = parameters[0][cmdConfig.Prefix.Length..];
-            if (string.IsNullOrEmpty(parameters[0]))
-            {
-                _logger.LogDebug("Empty command after removing prefix");
-                return false;
-            }
-        }
-
-        var cmdName = parameters[0].ToLowerInvariant();
-        if (!_commands.TryGetValue(cmdName, out var registration))
-        {
-            _logger.LogDebug("Command not found: {Command}", cmdName);
+        if (!TryExtractCommandName(parameters, context.Configuration.Command, out var cmdName, out var argsParams))
             return false;
-        }
 
-        if (!registration.Types.HasFlag(requiredType))
-        {
-            _logger.LogDebug("Command '{Command}' does not support {Type} (supports: {Supported})",
-                cmdName, requiredType, registration.Types);
+        if (!TryGetCommandRegistration(cmdName, requiredType, out var registration))
             return false;
-        }
 
-        var argsParams = parameters.Skip(1).ToList();
         var args = argsFactory(argsParams, messageEvent);
         args.CommandName = parameters[0];
-        args.CommandPrefix = cmdConfig.EnablePrefix ? cmdConfig.Prefix : string.Empty;
+        args.CommandPrefix = context.Configuration.Command.EnablePrefix ? context.Configuration.Command.Prefix : string.Empty;
 
-        if (await CommandEvents.TriggerCommandExecuting(args, cmdName))
-        {
-            _logger.LogDebug("Command '{Command}' was intercepted by event", cmdName);
+        if (await TriggerCommandExecuting(args, cmdName))
             return true;
-        }
 
         await CommandHelper.ExecuteAsync(registration.Tree, args, cmdName);
         return true;
@@ -179,7 +122,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
         if (!_commands.TryGetValue(name.ToLowerInvariant(), out var registration))
             return false;
 
-        return commandType == null || registration.Types.HasFlag(commandType.Value);
+        return commandType == null || registration.Types.Supports(commandType.Value);
     }
 
     public IEnumerable<string> GetAllCommands(CommandType? commandType = null)
@@ -188,7 +131,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
             return _commands.Keys;
 
         return _commands
-            .Where(kv => kv.Value.Types.HasFlag(commandType.Value))
+            .Where(kv => kv.Value.Types.Supports(commandType.Value))
             .Select(kv => kv.Key);
     }
 
@@ -199,9 +142,93 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
             : null;
     }
 
-    private sealed class CommandRegistration(Command tree, CommandType types)
+    public IEnumerable<CommandInfo> GetAllCommandInfos(CommandType? commandType = null, bool includeSubCommands = true)
     {
-        public Command Tree { get; } = tree;
-        public CommandType Types { get; set; } = types;
+        var processedTrees = new HashSet<Command>();
+
+        foreach (var (_, registration) in _commands)
+        {
+            if (commandType != null && !registration.Types.Supports(commandType.Value))
+                continue;
+
+            if (!processedTrees.Add(registration.Tree))
+                continue;
+
+            var extractor = new CommandInfoExtractor(registration.Tree, registration.Aliases, includeSubCommands);
+            foreach (var info in extractor.Extract())
+            {
+                yield return info;
+            }
+        }
+    }
+
+    private static bool TryExtractCommandName(
+        List<string> parameters,
+        CommandConfiguration config,
+        out string cmdName,
+        out List<string> argsParams)
+    {
+        cmdName = string.Empty;
+        argsParams = [];
+
+        if (config.EnablePrefix && !string.IsNullOrEmpty(config.Prefix))
+        {
+            if (!parameters[0].StartsWith(config.Prefix, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            parameters[0] = parameters[0][config.Prefix.Length..];
+            if (string.IsNullOrEmpty(parameters[0]))
+                return false;
+        }
+
+        cmdName = parameters[0].ToLowerInvariant();
+        argsParams = [.. parameters.Skip(1)];
+        return true;
+    }
+
+    private bool TryGetCommandRegistration(string cmdName, CommandType requiredType, out CommandRegistration registration)
+    {
+        registration = null!;
+
+        if (!_commands.TryGetValue(cmdName, out var reg))
+        {
+            _logger.LogDebug("Command not found: {Command}", cmdName);
+            return false;
+        }
+
+        if (!reg.Types.Supports(requiredType))
+        {
+            _logger.LogDebug("Command '{Command}' does not support {Type} (supports: {Supported})",
+                cmdName, requiredType, reg.Types);
+            return false;
+        }
+
+        registration = reg;
+        return true;
+    }
+
+    private async Task<bool> TriggerCommandExecuting(CommandArgs args, string cmdName)
+    {
+        if (await CommandEvents.TriggerCommandExecuting(args, cmdName))
+        {
+            _logger.LogDebug("Command '{Command}' was intercepted by event", cmdName);
+            return true;
+        }
+        return false;
+    }
+
+    private static ServerCommandArgs CreateServerArgs(
+        VortexContext context,
+        List<string> argsParams,
+        Player player,
+        int sessionId,
+        List<string> parameters,
+        CommandConfiguration config)
+    {
+        return new ServerCommandArgs(context, argsParams, player, sessionId)
+        {
+            CommandName = parameters[0],
+            CommandPrefix = config.EnablePrefix ? config.Prefix : string.Empty
+        };
     }
 }

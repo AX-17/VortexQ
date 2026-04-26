@@ -6,6 +6,7 @@ using Vortex.Bot.Database.Models;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("搜索用户", "searchuser", "finduser")]
+[HelpText("搜索服务器用户")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.searchuser")]
 public static class SearchUserCommand
