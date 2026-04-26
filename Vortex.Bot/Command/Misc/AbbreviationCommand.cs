@@ -9,13 +9,15 @@ namespace Vortex.Bot.Command.Misc;
 public static class AbbreviationCommand
 {
     [Main]
-    public static async Task Execute(CommandArgs args, [Param("缩写文本")] string text)
+    public static async Task Execute(CommandArgs args)
     {
-        if (string.IsNullOrWhiteSpace(text))
+        if (args.Params.Count == 0)
         {
             await args.ReplyAsync("请输入要查询的缩写");
             return;
         }
+
+        var text = args.Params[0];
 
         try
         {

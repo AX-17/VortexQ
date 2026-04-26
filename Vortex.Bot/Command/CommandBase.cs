@@ -22,9 +22,7 @@ internal abstract class CommandBase
 
     protected CommandBase(MemberInfo member)
     {
-        Permissions = member.GetCustomAttributes<PermissionAttribute>()
-            .SelectMany(p => p.Permissions)
-            .ToArray();
+        Permissions = [.. member.GetCustomAttributes<PermissionAttribute>().SelectMany(p => p.Permissions)];
     }
 
     protected CommandBase()

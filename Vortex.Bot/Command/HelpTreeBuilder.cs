@@ -63,7 +63,7 @@ internal sealed class HelpTreeBuilder(string rootPath)
         }
     }
 
-    private List<HelpNode> GetVisibleChildren(Command command)
+    private static List<HelpNode> GetVisibleChildren(Command command)
     {
         var children = new List<HelpNode>();
 
@@ -76,7 +76,7 @@ internal sealed class HelpTreeBuilder(string rootPath)
         return children;
     }
 
-    private List<HelpNode> GetNamedSubCommands(Command command)
+    private static List<HelpNode> GetNamedSubCommands(Command command)
     {
         var nodes = new List<HelpNode>();
 
@@ -122,7 +122,7 @@ internal sealed class HelpTreeBuilder(string rootPath)
         return nodes;
     }
 
-    private List<HelpNode> GetNestedSubCommands(Command command)
+    private static List<HelpNode> GetNestedSubCommands(Command command)
     {
         var nodes = new List<HelpNode>();
 

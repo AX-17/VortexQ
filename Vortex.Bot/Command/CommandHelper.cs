@@ -46,10 +46,25 @@ internal static class CommandHelper
         {
             var aliases = GetAlias(func).ToArray();
             var isMain = func.GetCustomAttribute<MainAttribute>() != null;
-            var isFlexible = isMain || func.GetCustomAttribute<FlexibleAttribute>() != null;
+            var flexibleAttr = func.GetCustomAttribute<FlexibleAttribute>();
+            var isFlexible = flexibleAttr != null;
+
+            ExecutorType executorType;
+            int minArgs = 0;
+
+            if (isFlexible)
+            {
+                executorType = ExecutorType.Flexible;
+                minArgs = flexibleAttr!.MinArgs;
+            }
+            else
+            {
+                executorType = ExecutorType.Normal;
+            }
+
             var displayName = aliases[0];
             var executorName = isMain ? "" : displayName;
-            CommandBase sub = new CommandExecutor(func, prefix, executorName, isFlexible);
+            CommandBase sub = new CommandExecutor(func, prefix, executorName, executorType, minArgs);
 
             if (isMain)
                 result.Add(null, sub);
@@ -110,7 +125,7 @@ internal static class CommandHelper
     {
         var commandAliases = info.GetCustomAttributes<CommandAttribute>().SelectMany(a => a.Alias);
         var aliasAttrs = info.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
-        
+
         var flag = false;
 
         foreach (var a in commandAliases)

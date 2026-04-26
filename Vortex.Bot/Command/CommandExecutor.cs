@@ -4,12 +4,20 @@ using Vortex.Bot.Attributes;
 
 namespace Vortex.Bot.Command;
 
+internal enum ExecutorType
+{
+    Normal,
+    Flexible
+}
+
+internal readonly record struct ValidationResult(int MinArgs, int MaxArgs);
+
 internal sealed class CommandExecutor : CommandBase
 {
     private readonly CommandParser.Parser[] _argParsers;
     private readonly Type[] _argTypes;
     private readonly MethodInfo _method;
-    private readonly bool _isFlexible;
+    private readonly ExecutorType _executorType;
     private readonly int _minArgs;
     private readonly Type _argsType;
     private readonly string _parentPrefix;
@@ -20,18 +28,17 @@ internal sealed class CommandExecutor : CommandBase
         MethodInfo method,
         string parentPrefix,
         string commandName,
-        bool isFlexible = false) : base(method)
+        ExecutorType executorType = ExecutorType.Normal,
+        int minArgs = 0) : base(method)
     {
         _method = method;
-        _isFlexible = isFlexible;
+        _executorType = executorType;
+        _minArgs = minArgs;
         _parentPrefix = parentPrefix;
         _commandName = commandName;
 
         var parameters = method.GetParameters();
         ValidateParameters(parameters);
-
-        var flexibleAttr = method.GetCustomAttribute<FlexibleAttribute>();
-        _minArgs = flexibleAttr?.MinArgs ?? 0;
 
         _argsType = parameters[0].ParameterType;
         _argParsers = CreateParsers(parameters);
@@ -50,9 +57,7 @@ internal sealed class CommandExecutor : CommandBase
         }
     }
 
-    private CommandParser.Parser[] CreateParsers(ParameterInfo[] parameters)
-    {
-        return parameters
+    private CommandParser.Parser[] CreateParsers(ParameterInfo[] parameters) => [.. parameters
             .Skip(1)
             .Select(p =>
             {
@@ -62,19 +67,13 @@ internal sealed class CommandExecutor : CommandBase
                         $"Parameter type {p.ParameterType.Name} is not supported for command method {_method.Name}");
                 }
                 return CommandParser.GetParser(p.ParameterType);
-            })
-            .ToArray();
-    }
+            })];
 
-    private Type[] CreateArgTypes(ParameterInfo[] parameters)
-    {
-        return parameters
+    private static Type[] CreateArgTypes(ParameterInfo[] parameters) => [.. parameters
             .Skip(1)
-            .Select(p => p.ParameterType)
-            .ToArray();
-    }
+            .Select(p => p.ParameterType)];
 
-    private string BuildParamInfo(ParameterInfo[] parameters)
+    private static string BuildParamInfo(ParameterInfo[] parameters)
     {
         var sb = new StringBuilder();
         foreach (var p in parameters.Skip(1))
@@ -121,41 +120,61 @@ internal sealed class CommandExecutor : CommandBase
         var p = args.Params;
         var n = _argParsers.Length;
         var expectedCount = n + current;
+        var validation = GetValidationRules(n, current);
 
-        if (_isFlexible)
+        if (p.Count < validation.MinArgs)
+            return GetResult(validation.MinArgs - p.Count);
+
+        if (_executorType == ExecutorType.Normal && p.Count != expectedCount)
+            return GetResult(Math.Abs(expectedCount - p.Count));
+
+        var parsedArgs = ParseArguments(p, current, n);
+        if (parsedArgs == null)
+            return GetResult(1);
+
+        return await InvokeMethodAsync(args, parsedArgs);
+    }
+
+    private ValidationResult GetValidationRules(int paramCount, int current)
+    {
+        if (_executorType == ExecutorType.Flexible)
         {
-            var minExpectedCount = _minArgs + current;
-            if (p.Count < minExpectedCount)
-                return GetResult(minExpectedCount - p.Count);
-
-            if (p.Count > expectedCount)
-                return GetResult(p.Count - expectedCount);
+            return new ValidationResult(
+                _minArgs + current,
+                int.MaxValue);
         }
         else
         {
-            if (p.Count != expectedCount)
-                return GetResult(Math.Abs(expectedCount - p.Count));
+            var expectedCount = paramCount + current;
+            return new ValidationResult(expectedCount, expectedCount);
         }
+    }
 
-        var invokeArgs = new object?[n + 1];
-        invokeArgs[0] = args;
+    private object?[]? ParseArguments(List<string> paramsList, int current, int paramCount)
+    {
+        var invokeArgs = new object?[paramCount + 1];
+        invokeArgs[0] = null;
 
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < paramCount; i++)
         {
             var paramIndex = current + i;
-            if (paramIndex >= p.Count)
+
+            if (paramIndex >= paramsList.Count)
             {
-                if (_isFlexible && i >= _minArgs)
-                {
-                    invokeArgs[i + 1] = GetDefaultValue(_argTypes[i]);
-                    continue;
-                }
-                return GetResult(n - i);
+                invokeArgs[i + 1] = GetDefaultValue(_argTypes[i]);
+                continue;
             }
 
-            if (!_argParsers[i](p[paramIndex], out invokeArgs[i + 1]))
-                return GetResult(n - i);
+            if (!_argParsers[i](paramsList[paramIndex], out invokeArgs[i + 1]))
+                return null;
         }
+
+        return invokeArgs;
+    }
+
+    private async Task<ParseResult> InvokeMethodAsync(CommandArgs args, object?[] invokeArgs)
+    {
+        invokeArgs[0] = args;
 
         var permResult = await CheckPermissionAsync(args);
         if (permResult.Result != PermissionResult.Granted)
@@ -163,6 +182,7 @@ internal sealed class CommandExecutor : CommandBase
             await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
             return GetResult(0);
         }
+
         var result = _method.Invoke(null, invokeArgs);
         if (result is Task task)
             await task;
