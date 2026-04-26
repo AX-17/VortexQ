@@ -7,12 +7,12 @@ using Vortex.Bot.Utility.Images;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("服务器信息", "serverinfo", "svinfo")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.info")]
 public static class ServerInfoCommand
 {
     [Main]
-    public static async Task ShowServerInfo(CommandArgs args)
+    public static async Task ShowServerInfo(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -21,9 +21,7 @@ public static class ServerInfoCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-
-        if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
         {
             await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;

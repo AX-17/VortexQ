@@ -1,18 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Core.Service;
-using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("进度", "progress")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.progress")]
 public static class GameProgressCommand
 {
     [Main]
-    public static async Task ShowGameProgress(CommandArgs args)
+    public static async Task ShowGameProgress(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -21,9 +19,7 @@ public static class GameProgressCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-
-        if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
         {
             await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;

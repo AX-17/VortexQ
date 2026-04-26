@@ -12,7 +12,11 @@ public class PlayerMessageHandler : RoutedPushHandlerBase<PlayerMessagePacket>
 {
     public override void Handle(PlayerMessagePacket packet, PacketRouteContext context)
     {
-        if(packet.IsCommand) return;
+        if (packet.IsCommand)
+        {
+            Server?.VortexContext.CommandManager.ExecuteServerAsync(packet.Message, Context, packet.Player, context.SenderSessionId);
+            return;
+        }
         var servers = Context?.Server?.Services.GetService<TerrariaServerService>();
         if (servers == null) return;
         var message = new MessageBuilder()

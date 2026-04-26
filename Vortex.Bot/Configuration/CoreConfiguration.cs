@@ -12,5 +12,7 @@ public class CoreConfiguration
 
     public CommandConfiguration Command { get; set; } = new();
 
+    public MailConfiguration Mail { get; set; } = new();
+
     public List<long> SuperAdmins { get; set; } = [523321293];
 }

@@ -3,6 +3,7 @@ using Lagrange.Core.Events.EventArgs;
 using Microsoft.Extensions.Logging;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Utility;
+using Vortex.Protocol.Models;
 
 namespace Vortex.Bot.Command;
 
@@ -64,8 +65,10 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
             (@params, evt) => new PrivateCommandArgs(context, @params, evt), context);
     }
 
-    public async Task<bool> ExecuteServerAsync(string commandText, VortexContext context, string executorName = "Console", bool hasServerPermission = true)
+    public async Task<bool> ExecuteServerAsync(string commandText, VortexContext? context, Player player, int sessionId)
     {
+        if (context == null) return false;
+
         var parameters = CommandUtility.ParseParameters(commandText);
         if (parameters.Count == 0) return false;
 
@@ -99,7 +102,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
         }
 
         var argsParams = parameters.Skip(1).ToList();
-        var args = new ServerCommandArgs(context, argsParams, executorName, hasServerPermission)
+        var args = new ServerCommandArgs(context, argsParams, player, sessionId)
         {
             CommandName = parameters[0],
             CommandPrefix = cmdConfig.EnablePrefix ? cmdConfig.Prefix : string.Empty

@@ -1,4 +1,4 @@
-﻿using Vortex.Bot.Command;
+using Vortex.Bot.Command;
 
 namespace Vortex.Bot.Attributes;
 
@@ -28,6 +28,27 @@ public class MainAttribute : Attribute
 [AttributeUsage(AttributeTargets.Method)]
 public class FlexibleAttribute : Attribute
 {
+    /// <summary>
+    /// 最小参数数量（可选参数之前的必需参数数量）
+    /// </summary>
+    public int MinArgs { get; }
+
+    /// <summary>
+    /// 允许参数数量可变
+    /// </summary>
+    public FlexibleAttribute()
+    {
+        MinArgs = 0;
+    }
+
+    /// <summary>
+    /// 允许参数数量可变，指定最小参数数量
+    /// </summary>
+    /// <param name="minArgs">最小参数数量（可选参数之前的必需参数数量）</param>
+    public FlexibleAttribute(int minArgs)
+    {
+        MinArgs = minArgs;
+    }
 }
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]

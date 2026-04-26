@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terraria 服务器注册成功</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header .server-name {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .password-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .password-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .password-value {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .tips {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .tips h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 14px;
+        }
+        .tips p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+        }
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <div class="success-icon">✓</div>
+            <h1>注册成功</h1>
+            <div class="server-name">{{ServerName}}</div>
+        </div>
+        <div class="content">
+            <div class="info-item">
+                <span class="info-label">角色名称</span>
+                <span class="info-value">{{CharacterName}}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">QQ 账号</span>
+                <span class="info-value">{{QQNumber}}</span>
+            </div>
+            <div class="password-box">
+                <div class="password-label">您的登录密码</div>
+                <div class="password-value">{{Password}}</div>
+            </div>
+            <div class="tips">
+                <h3>💡 温馨提示</h3>
+                <p>1. 请妥善保管您的密码，不要泄露给他人</p>
+                <p>2. 进入游戏后可以使用 /password [当前密码] [新密码] 修改密码</p>
+                <p>3. 如有问题请联系服务器管理员</p>
+            </div>
+        </div>
+        <div class="footer">
+            本邮件由 Vortex Bot 自动发送，请勿回复
+        </div>
+    </div>
+</body>
+</html>

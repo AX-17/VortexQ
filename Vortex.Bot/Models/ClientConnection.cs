@@ -2,9 +2,6 @@ using System.Net.Sockets;
 
 namespace Vortex.Bot.Models;
 
-/// <summary>
-/// 客户端连接信息
-/// </summary>
 public class ClientConnection
 {
     public Guid ClientId { get; set; }

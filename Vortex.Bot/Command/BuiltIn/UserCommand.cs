@@ -1,5 +1,4 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Database.Models;
 
 namespace Vortex.Bot.Command.BuiltIn;

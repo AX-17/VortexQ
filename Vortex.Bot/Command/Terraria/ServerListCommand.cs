@@ -1,18 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("服务器列表", "servers", "svlist")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.list")]
 public static class ServerListCommand
 {
     [Main]
-    public static async Task ShowServerList(CommandArgs args)
+    public static async Task ShowServerList(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -21,9 +20,8 @@ public static class ServerListCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-        var servers = groupId > 0
-            ? serverManager.GetServersByGroup(groupId).ToList()
+        var servers = args.GroupUin > 0
+            ? [.. serverManager.GetServersByGroup(args.GroupUin)]
             : serverManager.GetAllServers().ToList();
 
         if (servers.Count == 0)

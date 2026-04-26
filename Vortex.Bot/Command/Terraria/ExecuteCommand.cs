@@ -5,12 +5,12 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("执行", "exec", "cmd")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.execute")]
 public static class ExecuteCommand
 {
     [Main]
-    public static async Task ExecuteServerCommand(CommandArgs args)
+    public static async Task ExecuteServerCommand(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -19,11 +19,9 @@ public static class ExecuteCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-
-        if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换服务器 <名称>' 选择要操作的服务器!");
+            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 

@@ -5,12 +5,12 @@ using Vortex.Bot.Core.Service;
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("切换", "switch", "use")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.switch")]
 public static class ServerSwitchCommand
 {
     [Main]
-    public static async Task SwitchServer(CommandArgs args, [Param("名称")] string serverName)
+    public static async Task SwitchServer(GroupCommandArgs args, [Param("名称")] string serverName)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -25,21 +25,19 @@ public static class ServerSwitchCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-
         if (!serverManager.TryGetServer(serverName, out var server) || server == null)
         {
             await args.ReplyAsync($"未找到服务器: {serverName}");
             return;
         }
 
-        if (groupId > 0 && !server.Config.Groups.Contains(groupId))
+        if (args.GroupUin > 0 && !server.Config.Groups.Contains(args.GroupUin))
         {
             await args.ReplyAsync("此服务器不属于当前群组!");
             return;
         }
 
-        serverManager.SetUserServer(args.SenderUin, groupId, serverName);
+        serverManager.SetUserServer(args.SenderUin, args.GroupUin, serverName);
         await args.ReplyAsync($"已切换到服务器: {serverName}");
     }
 }

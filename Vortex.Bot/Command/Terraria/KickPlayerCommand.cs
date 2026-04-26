@@ -4,13 +4,13 @@ using Vortex.Bot.Core.Service;
 
 namespace Vortex.Bot.Command.Terraria;
 
-[Command("重启服务器", "restart")]
+[Command("踢出玩家", "kickplayer")]
 [CommandType(CommandType.Group)]
-[Permission("vortex.terraria.server.restart")]
-public static class ServerRestartCommand
+[Permission("vortex.terraria.kick")]
+public static class KickPlayerCommand
 {
     [Main]
-    public static async Task RestartServer(GroupCommandArgs args)
+    public static async Task Execute(GroupCommandArgs args, [Param("玩家名称")] string playerName, [Param("原因(可选)")] string reason = "")
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -25,16 +25,16 @@ public static class ServerRestartCommand
             return;
         }
 
-        var startArgs = args.Params.Count > 0 ? string.Join(" ", args.Params) : "";
-        var result = await server.RestartAsync(startArgs);
+        var kickReason = string.IsNullOrEmpty(reason) ? "Kicked by admin" : reason;
+        var result = await server.ExecuteCommandAsync($"/kick {playerName} \"{kickReason}\"");
 
         if (result?.Success == true)
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 正在重启服务器，请稍后...");
+            await args.ReplyAsync($"[{server.Config.Name}] 已踢出玩家 {playerName}\n原因: {kickReason}");
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 重启失败: {result?.Message ?? "无法连接服务器"}");
+            await args.ReplyAsync($"[{server.Config.Name}] 踢出玩家失败: {result?.Message ?? "无法连接服务器"}");
         }
     }
 }

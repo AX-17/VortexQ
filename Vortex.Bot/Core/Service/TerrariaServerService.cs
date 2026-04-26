@@ -154,6 +154,40 @@ public class TerrariaServerService
         return await _vortexServer.RequestAsync<ServerResetPacket, ServerResetPacketResponse>(clientId.Value, request, timeoutMs);
     }
 
+    public async Task<AccountRegistrationPacketResponse?> RegisterAccountAsync(string serverName, string name, string password, string group, int timeoutMs = 10000)
+    {
+        if (!TryGetServer(serverName, out var server) || server == null)
+            return null;
+
+        var clientId = server.GetOnlineClientId();
+        if (clientId == null)
+            return null;
+
+        var request = new AccountRegistrationPacket
+        {
+            Name = name,
+            Password = password,
+            Group = group
+        };
+        return await _vortexServer.RequestAsync<AccountRegistrationPacket, AccountRegistrationPacketResponse>(clientId.Value, request, timeoutMs);
+    }
+
+    public async Task<AccountQueryPacketResponse?> QueryAccountAsync(string serverName, string targetName, int timeoutMs = 5000)
+    {
+        if (!TryGetServer(serverName, out var server) || server == null)
+            return null;
+
+        var clientId = server.GetOnlineClientId();
+        if (clientId == null)
+            return null;
+
+        var request = new AccountQueryPacket
+        {
+            Target = targetName
+        };
+        return await _vortexServer.RequestAsync<AccountQueryPacket, AccountQueryPacketResponse>(clientId.Value, request, timeoutMs);
+    }
+
     public void RegisterClientConnection(string serverName, Guid clientId)
     {
         _logger.LogInformation("[TerrariaServerManager] 尝试注册服务器连接: {ServerName}, 可用服务器: {Servers}",
@@ -287,5 +321,31 @@ public class TerrariaServer
             StartArgs = startArgs
         };
         return await VortexServer.RequestAsync<ServerResetPacket, ServerResetPacketResponse>(_connectedClientId.Value, request);
+    }
+
+    public async Task<AccountRegistrationPacketResponse?> RegisterAccountAsync(string name, string password, string group)
+    {
+        if (_connectedClientId == null)
+            return null;
+
+        var request = new AccountRegistrationPacket
+        {
+            Name = name,
+            Password = password,
+            Group = group
+        };
+        return await VortexServer.RequestAsync<AccountRegistrationPacket, AccountRegistrationPacketResponse>(_connectedClientId.Value, request);
+    }
+
+    public async Task<AccountQueryPacketResponse?> QueryAccountAsync(string targetName)
+    {
+        if (_connectedClientId == null)
+            return null;
+
+        var request = new AccountQueryPacket
+        {
+            Target = targetName
+        };
+        return await VortexServer.RequestAsync<AccountQueryPacket, AccountQueryPacketResponse>(_connectedClientId.Value, request);
     }
 }

@@ -1,17 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Core.Service;
 
 namespace Vortex.Bot.Command.Terraria;
 
 [Command("重置服务器", "reset")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.reset")]
 public static class ServerResetCommand
 {
     [Main]
-    public static async Task ResetServer(CommandArgs args)
+    public static async Task ResetServer(GroupCommandArgs args)
     {
         var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
@@ -20,9 +19,7 @@ public static class ServerResetCommand
             return;
         }
 
-        var groupId = args is GroupCommandArgs groupArgs ? groupArgs.GroupUin : 0;
-
-        if (!serverManager.TryGetUserServer(args.SenderUin, groupId, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
         {
             await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
@@ -33,7 +30,7 @@ public static class ServerResetCommand
 
         foreach (var param in args.Params)
         {
-            if (param.StartsWith("-"))
+            if (param.StartsWith('-'))
             {
                 startArgs += param + " ";
             }

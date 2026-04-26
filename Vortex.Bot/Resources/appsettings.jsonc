@@ -35,6 +35,16 @@
             "EnablePrefix": false,
             "Prefix": ""
         },
+        "Mail": {
+            "Enabled": false,
+            "Host": "smtp.qq.com",
+            "Port": 587,
+            "Username": "",
+            "Password": "",
+            "From": "",
+            "FromName": "Vortex Bot",
+            "EnableSsl": true
+        },
         "SuperAdmins": []
     },
     "TerrariaServers": {

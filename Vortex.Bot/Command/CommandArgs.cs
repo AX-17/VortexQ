@@ -4,9 +4,13 @@ using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Models;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command;
 
@@ -24,10 +28,10 @@ public abstract class CommandArgs(VortexContext context, List<string> @params, B
     public MessageChain? MessageChain => Message?.Entities;
     public long SenderUin => Message?.Contact.Uin ?? 0;
 #pragma warning disable CS8618
-    public Account Account { get; private set; }
+    public Account Account { get; protected set; }
 #pragma warning restore CS8618
-    public Group Group { get; private set; } = DefaultGroup.Instance;
-    public bool IsSuperAdmin { get; private set; }
+    public Vortex.Bot.Database.Models.Group Group { get; protected set; } = DefaultGroup.Instance;
+    public bool IsSuperAdmin { get; protected set; }
     protected void InitializeAccount()
     {
         if (SenderUin > 0)
@@ -139,40 +143,54 @@ public class PrivateCommandArgs : CommandArgs
 
 public class ServerCommandArgs : CommandArgs
 {
-    public string ExecutorName { get; init; }
-    public bool HasServerPermission { get; init; }
+    public Protocol.Models.Player Player { get; init; }
 
-    public ServerCommandArgs(VortexContext context, List<string> @params, string executorName, bool hasServerPermission)
-        : base(context, @params, null)
+    public int SessionId { get; init; }
+
+    public VortexSocketService? VortexSocketService => Context.Server;
+
+    public ClientConnection? SenderConnection => VortexSocketService?.Connections.GetClientBySession(SessionId);
+
+    public TerrariaUser? User => TerrariaUser.GetUserByName(Player.Name, SenderConnection?.ClientName ?? "");
+
+    public TerrariaServerService? TerrariaServerService => Context.Server?.Services.GetService<TerrariaServerService>();
+
+    public TerrariaServer? Server => TerrariaServerService?.GetServer(SenderConnection?.ClientName ?? "");
+
+    public ServerCommandArgs(VortexContext context, List<string> @params, Protocol.Models.Player player, int sessionId) : base(context, @params, null)
     {
-        ExecutorName = executorName;
-        HasServerPermission = hasServerPermission;
+        Player = player;
+        SessionId = sessionId;
+        Account = Account.GetOrDefault(User?.Id ?? 0);
+        Group = Account.Group;
+        IsSuperAdmin = Context.Configuration.SuperAdmins.Contains(User?.Id ?? 0);
     }
 
     public new bool HasPermission(string permission)
     {
-        if (HasServerPermission)
-            return true;
-
         return base.HasPermission(permission);
     }
 
-    public override Task ReplyAsync(string message)
+    public override async Task ReplyAsync(string message)
     {
-        Logger.LogInformation($"[{ExecutorName}] {message}");
-        return Task.CompletedTask;
+        #pragma warning disable CS8602
+        _ = await VortexSocketService?.SendToSessionAsync(SessionId, new PrivateMessagePacket()
+        {
+            Text = message,
+            Name = Player.Name,
+            Color = [255, 255, 255]
+        });
+        #pragma warning restore CS8602
     }
 
-    public override Task ReplyAsync(MessageChain chain)
+    public override async Task ReplyAsync(MessageChain chain)
     {
         var text = string.Join("", chain.OfType<TextEntity>().Select(t => t.Text));
-        Logger.LogInformation($"[{ExecutorName}] {text}");
-        return Task.CompletedTask;
+        await ReplyAsync(text);
     }
 
-    public override Task ReplyImageAsync(byte[] imageData)
+    public override async Task ReplyImageAsync(byte[] imageData)
     {
-        Logger.LogInformation($"[{ExecutorName}] [Image] {imageData.Length} bytes");
-        return Task.CompletedTask;
+        
     }
 }
