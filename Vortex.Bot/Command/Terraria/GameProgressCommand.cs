@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
+using Vortex.Bot.Utility.Images;
 using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
@@ -32,17 +32,47 @@ public static class GameProgressCommand
 
         if (progress?.Success == true && progress.Progress != null)
         {
-            StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine($"[{server.Config.Name}] 游戏进度");
-            sb.AppendLine();
-
-            foreach (KeyValuePair<string, bool> item in progress.Progress)
+            try
             {
-                var status = item.Value ? "✅" : "❌";
-                sb.AppendLine($"{status} {item.Key}");
-            }
+                // 使用新的图片生成器生成进度图片
+                ProgressBuilder builder = ProgressBuilder.Create()
+                    .SetServerName(server.Config.Name)
+                    .SetTitle("Boss 击杀进度")
+                    .SetItemsPerRow(4)
+                    .SetCardSize(260)
+                    .SetCardSpacing(25);
 
-            await args.ReplyAsync(sb.ToString());
+                // 添加所有Boss进度
+                foreach (KeyValuePair<string, bool> item in progress.Progress)
+                {
+                    string bossName = item.Key;
+                    bool isKilled = item.Value;
+
+                    // 尝试多种图片格式和路径
+                    string[] possiblePaths = new[]
+                    {
+                        $"Resources/Boss/{bossName}.png",
+                        $"Resources/Boss/{bossName}.jpg",
+                        $"Resources/Boss/{bossName}.jpeg",
+                        $"Resources/Terraria/Boss/{bossName}.png",
+                        $"Resources/Terraria/Boss/{bossName}.jpg",
+                    };
+
+                    string? imagePath = possiblePaths.FirstOrDefault(File.Exists);
+
+                    // 如果找不到图片，使用默认路径（生成器会处理缺失情况）
+                    imagePath ??= $"Resources/Boss/{bossName}.png";
+
+                    builder.AddBoss(bossName, imagePath, isKilled);
+                }
+
+                byte[] imageData = builder.Build();
+                await args.ReplyImageAsync(imageData);
+            }
+            catch (Exception ex)
+            {
+                await args.ReplyAsync($"生成进度图片失败: {ex.Message}");
+            }
         }
         else
         {

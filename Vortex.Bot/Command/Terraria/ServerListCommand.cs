@@ -55,6 +55,6 @@ public static class ServerListCommand
             );
         }
 
-        await args.ReplyImageAsync(tableBuilder.Builder());
+        await args.ReplyImageAsync(tableBuilder.Build());
     }
 }

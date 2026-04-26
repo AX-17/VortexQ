@@ -388,4 +388,16 @@ public class TerrariaServer
         };
         return await VortexServer.RequestAsync<AccountQueryPacket, AccountQueryPacketResponse>(_connectedClientId.Value, request);
     }
+
+    public async Task<PlayerInventoryPacketResponse?> QueryPlayerInventoryAsync(string playerName)
+    {
+        if (_connectedClientId == null)
+            return null;
+
+        PlayerInventoryPacket request = new PlayerInventoryPacket
+        {
+            Name = playerName
+        };
+        return await VortexServer.RequestAsync<PlayerInventoryPacket, PlayerInventoryPacketResponse>(_connectedClientId.Value, request);
+    }
 }

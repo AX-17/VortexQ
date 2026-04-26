@@ -50,7 +50,7 @@ public static class ServerInfoCommand
                 }
             }
 
-            await args.ReplyImageAsync(tableBuilder.Builder());
+            await args.ReplyImageAsync(tableBuilder.Build());
         }
         else
         {

@@ -35,19 +35,56 @@ internal static class CommandParser
 
     public static ArgumentParser GetParser(Type type)
     {
-        return Parsers.TryGetValue(type, out ArgumentParser? parser)
-            ? parser
-            : throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
+        if (Parsers.TryGetValue(type, out ArgumentParser? parser))
+            return parser;
+
+        if (Nullable.GetUnderlyingType(type) is Type underlyingType &&
+            Parsers.TryGetValue(underlyingType, out parser))
+        {
+#pragma warning disable CS8622
+            return (arg, out obj) =>
+            {
+                bool result = parser(arg, out object? parsedObj);
+#pragma warning disable CS8601
+                obj = parsedObj;
+#pragma warning restore CS8601
+                return result;
+            };
+#pragma warning restore CS8622
+        }
+
+        throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
     }
 
     public static string GetFriendlyName(Type type)
     {
-        return FriendlyNames.TryGetValue(type, out string? name) ? name : type.Name.ToLower();
+        if (Nullable.GetUnderlyingType(type) is Type underlyingType)
+        {
+            string baseName = FriendlyNames.TryGetValue(underlyingType, out string? name)
+                ? name
+                : underlyingType.Name.ToLower();
+            return baseName + "?";
+        }
+
+        return FriendlyNames.TryGetValue(type, out string? friendlyName)
+            ? friendlyName
+            : type.Name.ToLower();
     }
 
     public static bool IsSupportedType(Type type)
     {
-        return Parsers.ContainsKey(type);
+        if (Parsers.ContainsKey(type))
+            return true;
+
+        if (Nullable.GetUnderlyingType(type) is Type underlyingType)
+            return Parsers.ContainsKey(underlyingType);
+
+        return false;
+    }
+
+    public static Type GetUnderlyingType(Type type)
+    {
+        return Nullable.GetUnderlyingType(type) ?? type;
     }
 
     private static bool TryParseBool(string arg, out object obj)

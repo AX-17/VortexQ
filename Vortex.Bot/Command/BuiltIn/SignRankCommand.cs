@@ -33,7 +33,7 @@ public static class SignRankCommand
                 i++;
             }
 
-            var imageData = builder.Builder();
+            var imageData = builder.Build();
             await args.ReplyImageAsync(imageData);
         }
         catch (Exception e)

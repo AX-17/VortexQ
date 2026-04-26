@@ -1,4 +1,4 @@
-﻿using SixLabors.Fonts;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -10,11 +10,8 @@ namespace Vortex.Bot.Utility.Images;
 public class OnlineCell
 {
     public uint Uin { get; set; }
-
     public string Text { get; set; }
-
     public Color Color { get; set; }
-
     public bool UseColor { get; set; }
 
     public OnlineCell(uint uin, string text, Color color)
@@ -35,21 +32,19 @@ public class OnlineCell
 public class OnlineContent
 {
     public string Title { get; set; } = "在线人数";
-
     public List<OnlineCell> OnlineCells { get; set; } = [];
 }
 
 public class OnlineBuilder
 {
-    public List<OnlineContent> Contents { get; set; } = [];
-
-    private OnlineGenerate onlineGenerate = new();
+    public List<OnlineContent> Contents { get; } = [];
+    internal OnlineGenerate Generator { get; } = new();
 
     public static OnlineBuilder Create() => new();
 
     public OnlineBuilder Add(string tileName, params OnlineCell[] cells)
     {
-        OnlineContent content = new OnlineContent()
+        OnlineContent content = new()
         {
             Title = tileName,
             OnlineCells = [.. cells]
@@ -60,128 +55,126 @@ public class OnlineBuilder
 
     public OnlineBuilder SetFontSize(int size)
     {
-        onlineGenerate.FontSize = size;
+        Generator.Config.FontSize = size;
         return this;
     }
 
     public OnlineBuilder SetTitleFontSize(int size)
     {
-        onlineGenerate.TitleFontSize = size;
+        Generator.Config.TitleFontSize = size;
         return this;
     }
 
     public OnlineBuilder SetTilePadding(int padding)
     {
-        onlineGenerate.TilePadding = padding;
+        Generator.TilePadding = padding;
         return this;
     }
 
     public OnlineBuilder SetAvatarSize(int size)
     {
-        onlineGenerate.AvatarSize = size;
+        Generator.Config.AvatarSize = size;
         return this;
     }
 
     public OnlineBuilder SetAvatarPadding(int padding)
     {
-        onlineGenerate.AvatarPadding = padding;
+        Generator.AvatarPadding = padding;
         return this;
     }
 
     public OnlineBuilder SetLineMax(int max)
     {
-        onlineGenerate.LineMax = max;
+        Generator.LineMax = max;
         return this;
     }
 
     public OnlineBuilder SetSpacing(int spacing)
     {
-        onlineGenerate.Spacing = spacing;
+        Generator.Spacing = spacing;
         return this;
     }
 
     public OnlineBuilder SetCardTopPadding(int padding)
     {
-        onlineGenerate.CardTopPadding = padding;
+        Generator.CardTopPadding = padding;
         return this;
     }
 
     public OnlineBuilder SetCardBottomPadding(int padding)
     {
-        onlineGenerate.CardBottomPadding = padding;
+        Generator.CardBottomPadding = padding;
         return this;
     }
 
     public OnlineBuilder SetCardMargin(int margin)
     {
-        onlineGenerate.CardMargin = margin;
+        Generator.Config.CardMargin = margin;
         return this;
     }
 
     public OnlineBuilder SetCardDrawPadding(int padding)
     {
-        onlineGenerate.CardDrawPadding = padding;
+        Generator.CardDrawPadding = padding;
         return this;
     }
 
     public OnlineBuilder SetOnlinePadding(int padding)
     {
-        onlineGenerate.OnlinePadding = padding;
+        Generator.OnlinePadding = padding;
         return this;
     }
 
-    public byte[] Build() => onlineGenerate.DrawContent(this);
+    public byte[] Build() => Generator.Generate(this);
 }
 
-public class OnlineGenerate
+public class OnlineGenerate : ImageGeneratorBase, IImageGenerator<OnlineBuilder>
 {
-    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
-
-    public int FontSize { get; set; } = 36; //字体大小
-
-    public int TitleFontSize { get; set; } = 80; //每个OnlineContent标题大小
-
-    public int TilePadding { get; set; } = 40; //标题间距
-
-    public int AvatarSize { get; set; } = 36 * 7; //绘制头像大小
-
-    public int AvatarPadding { get; set; } = 10; //头像与文本之间的
-
-    public int LineMax { get; set; } = 6; //一行最多绘制个数
-
-    public int Spacing { get; set; } = 40; //绘制间隔
-
-    public int CardTopPadding { get; set; } = 300; //卡片上方距离
-
-    public int CardBottomPadding { get; set; } = 200; //卡片下方距离
-
-    public int CardMargin { get; set; } = 100; //卡片左右距离
-
-    public int CardDrawPadding { get; set; } = 100; //卡片与绘制内容距离
-
+    public int TilePadding { get; set; } = 40;
+    public int AvatarPadding { get; set; } = 10;
+    public int LineMax { get; set; } = 6;
+    public int Spacing { get; set; } = 40;
+    public int CardTopPadding { get; set; } = 300;
+    public int CardBottomPadding { get; set; } = 200;
+    public int CardDrawPadding { get; set; } = 100;
     public int OnlinePadding { get; set; } = 200;
 
-    public (int Width, List<int> Heights) ComputeLayout(OnlineBuilder builder)
+    private OnlineBuilder? _currentBuilder;
+    private List<int> _contentHeights = new();
+
+    public byte[] Generate(OnlineBuilder builder)
     {
-        FontFamily family = ImageUtility.GetFontFamily();
-        Font font = family.CreateFont(FontSize);
-        Font titleFont = family.CreateFont(TitleFontSize);
+        _currentBuilder = builder;
+        try
+        {
+            return base.Generate();
+        }
+        finally
+        {
+            _currentBuilder = null;
+            _contentHeights.Clear();
+        }
+    }
+
+    protected override (int Width, int Height) ComputeLayout()
+    {
+        if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
+
+        Font font = CreateFont(Config.FontSize);
+        Font titleFont = CreateFont(Config.TitleFontSize);
 
         FontRectangle titleSize = TextMeasurer.MeasureSize("测", new TextOptions(titleFont));
 
-        // 计算宽度
-        var width = (CardMargin * 2) + (CardDrawPadding * 2) + (LineMax * AvatarSize) + ((LineMax - 1) * Spacing);
+        int width = (Config.CardMargin * 2) + (CardDrawPadding * 2) + (LineMax * Config.AvatarSize) + ((LineMax - 1) * Spacing);
 
-        // 计算每个OnlineContent的高度
-        List<int> heights = new List<int>();
-        foreach (OnlineContent content in builder.Contents)
+        _contentHeights.Clear();
+        foreach (OnlineContent content in _currentBuilder.Contents)
         {
-            var height = TilePadding + (int)titleSize.Height;
+            int height = TilePadding + (int)titleSize.Height;
 
             if (content.OnlineCells.Count == 0)
             {
-                // 设置最小高度
-                height += AvatarSize + AvatarPadding + Spacing;
+                height += Config.AvatarSize + AvatarPadding + Spacing;
             }
             else
             {
@@ -190,117 +183,93 @@ public class OnlineGenerate
                 {
                     FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, new TextOptions(font)
                     {
-                        WrappingLength = AvatarSize,
+                        WrappingLength = Config.AvatarSize,
                         WordBreaking = WordBreaking.BreakAll
                     });
 
                     if (cellCount % LineMax == 0 && cellCount != 0)
                     {
-                        height += AvatarSize + AvatarPadding + Spacing;
+                        height += Config.AvatarSize + AvatarPadding + Spacing;
                     }
 
                     cellCount++;
                 }
 
-                // 增加最后一行的高度
-                height += AvatarSize + AvatarPadding + Spacing;
+                height += Config.AvatarSize + AvatarPadding + Spacing;
             }
 
-            // 增加OnlinePadding的高度
-            height += OnlinePadding;
-            height += TilePadding;
-            heights.Add(height);
+            height += OnlinePadding + TilePadding;
+            _contentHeights.Add(height);
         }
 
-        return (width, heights);
+        int totalHeight = CardTopPadding + CardBottomPadding + _contentHeights.Sum();
+
+        return (width, totalHeight);
     }
 
-
-
-    public byte[] DrawContent(OnlineBuilder builder)
+    protected override void DrawContent(IImageProcessingContext ctx, int width, int height)
     {
-        using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
-        (int width, List<int>? heights) = ComputeLayout(builder);
+        if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
 
-        // 计算总高度
-        var totalHeight = CardTopPadding + CardBottomPadding + heights.Sum();
+        Font font = CreateFont(Config.FontSize);
+        Font titleFont = CreateFont(Config.TitleFontSize);
 
-        using Image<Rgba32> image = background.Crop(width, totalHeight);
-
-        FontFamily family = ImageUtility.GetFontFamily();
-        Font font = family.CreateFont(FontSize);
-        Font titleFont = family.CreateFont(TitleFontSize);
-
-        image.Mutate(ctx =>
+        float yOffset = CardTopPadding;
+        for (int i = 0; i < _currentBuilder.Contents.Count; i++)
         {
-            float yOffset = CardTopPadding;
-            for (int i = 0; i < builder.Contents.Count; i++)
+            OnlineContent content = _currentBuilder.Contents[i];
+            int contentHeight = _contentHeights[i];
+
+            ctx.DrawRoundedRectangle(Config.CardMargin, yOffset, width - (Config.CardMargin * 2), contentHeight, 60, Config.CardBackgroundColor);
+
+            yOffset += TilePadding;
+
+            FontRectangle titleSize = TextMeasurer.MeasureSize(content.Title, new TextOptions(titleFont));
+            float titleX = (width - titleSize.Width) / 2;
+            ctx.DrawText(content.Title, titleFont, Color.Black, new PointF(titleX, yOffset));
+            yOffset += titleFont.Size + TilePadding;
+
+            int cellCount = 0;
+            foreach (OnlineCell cell in content.OnlineCells)
             {
-                OnlineContent content = builder.Contents[i];
-                var contentHeight = heights[i];
-
-                // 绘制新的卡片背景
-                ctx.DrawRoundedRectangle(CardMargin, yOffset, width - (CardMargin * 2), contentHeight, 60, Color.FromRgba(255, 255, 255, 230));
-
-                yOffset += TilePadding;
-
-                // 计算标题宽度并居中绘制
-                FontRectangle titleSize = TextMeasurer.MeasureSize(content.Title, new TextOptions(titleFont));
-                float titleX = (width - titleSize.Width) / 2;
-                ctx.DrawText(content.Title, titleFont, Color.Black, new PointF(titleX, yOffset));
-                yOffset += titleFont.Size + TilePadding;
-
-                int cellCount = 0;
-                foreach (OnlineCell cell in content.OnlineCells)
+                int row = cellCount / LineMax;
+                int col = cellCount % LineMax;
+                int centerX = width / 2;
+                int x = centerX + ((col % 2 == 0 ? 1 : -1) * ((col + 1) / 2) * (Config.AvatarSize + Spacing));
+                if (content.OnlineCells.Count == 1)
                 {
-                    // 计算头像位置
-                    int row = cellCount / LineMax;
-                    int col = cellCount % LineMax;
-                    int centerX = width / 2;
-                    int x = centerX + ((col % 2 == 0 ? 1 : -1) * ((col + 1) / 2) * (AvatarSize + Spacing));
-                    if (content.OnlineCells.Count == 1)
-                    {
-                        x = centerX - (AvatarSize / 2);
-                    }
-                    int y = (int)(yOffset + (row * (AvatarSize + Spacing + font.Size)));
-
-                    // 绘制头像
-                    Image<Rgba32> avatar = ImageUtility.GetAvatar(cell.Uin, AvatarSize);
-                    ctx.DrawImage(avatar, new Point(x, y), 1);
-
-                    // 计算文本位置并绘制
-                    Color textColor = cell.UseColor ? cell.Color : Color.Black;
-                    RichTextOptions textOptions = new RichTextOptions(font)
-                    {
-                        WrappingLength = AvatarSize,
-                        WordBreaking = WordBreaking.BreakAll,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Top,
-                        Origin = new PointF(x + (AvatarSize / 2), y + AvatarSize + AvatarPadding)
-                    };
-
-                    ctx.DrawText(textOptions, cell.Text, textColor);
-
-                    cellCount++;
+                    x = centerX - (Config.AvatarSize / 2);
                 }
+                int y = (int)(yOffset + (row * (Config.AvatarSize + Spacing + font.Size)));
 
-                if (content.OnlineCells.Count == 0)
+                using Image<Rgba32> avatar = ImageUtility.GetAvatar(cell.Uin, Config.AvatarSize);
+                ctx.DrawImage(avatar, new Point(x, y), 1);
+
+                Color textColor = cell.UseColor ? cell.Color : Color.Black;
+                RichTextOptions textOptions = new RichTextOptions(font)
                 {
-                    yOffset += AvatarSize + AvatarPadding + Spacing;
-                }
-                else
-                {
-                    yOffset += (int)Math.Ceiling(content.OnlineCells.Count / (double)LineMax) * (AvatarSize + Spacing + font.Size);
-                }
+                    WrappingLength = Config.AvatarSize,
+                    WordBreaking = WordBreaking.BreakAll,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Origin = new PointF(x + (Config.AvatarSize / 2), y + Config.AvatarSize + AvatarPadding)
+                };
 
-                // 增加OnlinePadding的距离
-                yOffset += OnlinePadding;
+                ctx.DrawText(textOptions, cell.Text, textColor);
 
-                // 确保每个卡片之间有足够的间距
-                yOffset += TilePadding;
+                cellCount++;
             }
-        });
 
-        return image.ToBytesAsync().Result;
+            if (content.OnlineCells.Count == 0)
+            {
+                yOffset += Config.AvatarSize + AvatarPadding + Spacing;
+            }
+            else
+            {
+                yOffset += (int)Math.Ceiling(content.OnlineCells.Count / (double)LineMax) * (Config.AvatarSize + Spacing + font.Size);
+            }
+
+            yOffset += OnlinePadding + TilePadding;
+        }
     }
 }

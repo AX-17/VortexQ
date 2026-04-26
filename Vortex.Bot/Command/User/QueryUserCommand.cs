@@ -12,7 +12,8 @@ namespace Vortex.Bot.Command.User;
 public static class QueryUserCommand
 {
     [Main]
-    public static async Task Execute(GroupCommandArgs args, [Param("QQ号(可选)")] long? targetUserId = null)
+    [Flexible]
+    public static async Task Execute(GroupCommandArgs args, [Param("QQ号(可选)")] long targetUserId = 0)
     {
         long userId;
 
@@ -21,9 +22,9 @@ public static class QueryUserCommand
         {
             userId = mention.Uin;
         }
-        else if (targetUserId.HasValue)
+        else if (targetUserId != 0)
         {
-            userId = targetUserId.Value;
+            userId = targetUserId;
         }
         else if (args.Params.Count == 0)
         {

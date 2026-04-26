@@ -86,6 +86,9 @@ internal sealed class ArgumentBinder
 
     private static object? GetDefaultValue(Type type)
     {
+        if (Nullable.GetUnderlyingType(type) != null)
+            return null;
+
         if (type == typeof(string))
             return string.Empty;
         if (type == typeof(int))

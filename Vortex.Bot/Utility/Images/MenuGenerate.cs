@@ -1,29 +1,17 @@
-﻿using SixLabors.Fonts;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Vortex.Bot.Extension;
 
 namespace Vortex.Bot.Utility.Images;
 
-public class MenuCell
+public class MenuCell(string text, string smallText)
 {
-    public string Text { get; set; }
-
-    public string SmallText { get; set; }
-
+    public string Text { get; set; } = text;
+    public string SmallText { get; set; } = smallText;
     public Color Color { get; set; } = Color.Black;
-
     public bool UseColor { get; set; }
-
-    private MenuGenerate MenuGenerate { get; set; } = new();
-
-    public MenuCell(string text, string smallText)
-    {
-        Text = text;
-        SmallText = smallText;
-    }
 
     public MenuCell(string text, string smallText, Color color) : this(text, smallText)
     {
@@ -34,9 +22,8 @@ public class MenuCell
 
 public class MenuBuilder
 {
-    public List<MenuCell> MenuCells { get; set; } = new();
-
-    private MenuGenerate _menuGenerate = new();
+    public List<MenuCell> MenuCells { get; } = new();
+    internal MenuGenerate Generator { get; } = new();
 
     public static MenuBuilder Create() => new();
 
@@ -54,144 +41,132 @@ public class MenuBuilder
 
     public MenuBuilder SetFontSize(int fontSize)
     {
-        _menuGenerate.FontSize = fontSize;
+        Generator.Config.FontSize = fontSize;
         return this;
     }
 
     public MenuBuilder SetSmallFontSize(int smallFontSize)
     {
-        _menuGenerate.SmallFontSize = smallFontSize;
+        Generator.SmallFontSize = smallFontSize;
         return this;
     }
 
     public MenuBuilder SetCellSpaced(int cellSpaced)
     {
-        _menuGenerate.CellSpaced = cellSpaced;
+        Generator.CellSpaced = cellSpaced;
         return this;
     }
 
     public MenuBuilder SetCellWidth(int cellWidth)
     {
-        _menuGenerate.CellWidth = cellWidth;
+        Generator.CellWidth = cellWidth;
         return this;
     }
 
     public MenuBuilder SetMargin(int margin)
     {
-        _menuGenerate.Margin = margin;
+        Generator.Config.CardMargin = margin;
         return this;
     }
 
     public MenuBuilder SetTopMargin(int topMargin)
     {
-        _menuGenerate.TopMargin = topMargin;
+        Generator.Config.CardTopMargin = topMargin;
         return this;
     }
 
     public MenuBuilder SetTextCellSpacing(int textCellSpacing)
     {
-        _menuGenerate.TextCellSpacing = textCellSpacing;
+        Generator.TextCellSpacing = textCellSpacing;
         return this;
     }
 
     public MenuBuilder SetLineMaxMenu(int lineMaxMenu)
     {
-        _menuGenerate.LineMaxMenu = lineMaxMenu;
+        Generator.LineMaxMenu = lineMaxMenu;
         return this;
     }
 
     public MenuBuilder SetAvatarSize(int avatarSize)
     {
-        _menuGenerate.AvatarSize = avatarSize;
+        Generator.Config.AvatarSize = avatarSize;
         return this;
     }
 
     public MenuBuilder SetAvatarTop(int avatarTop)
     {
-        _menuGenerate.AvatarTop = avatarTop;
+        Generator.AvatarTop = avatarTop;
         return this;
     }
 
     public MenuBuilder SetAvatarBottom(int avatarBottom)
     {
-        _menuGenerate.AvatarBottom = avatarBottom;
+        Generator.AvatarBottom = avatarBottom;
         return this;
     }
 
     public MenuBuilder SetMemberUin(long memberUin)
     {
-        _menuGenerate.MemberUin = memberUin;
+        Generator.Config.MemberUin = (uint)memberUin;
         return this;
     }
 
     public MenuBuilder SetCardColor(Color cardColor)
     {
-        _menuGenerate.CardColor = cardColor;
+        Generator.Config.CardBackgroundColor = cardColor;
         return this;
     }
 
     public byte[] Build()
     {
-        return _menuGenerate.DrawContent(this);
+        return Generator.Generate(this);
     }
 }
 
-public class MenuGenerate
+public class MenuGenerate : ImageGeneratorBase, IImageGenerator<MenuBuilder>
 {
-    public string BackgroundPath => ImageUtility.GetRandOneBotBackground();
-
-    public int FontSize { get; set; } = 36; //正常大小
-
-    public int SmallFontSize { get; set; } = 20; //说明字体大小
-
-    public int CellSpaced { get; set; } = 70; //单元与单元之间的间隔
-
-    public int CellWidth { get; set; } = 400; //单元最大像素
-
-    public int Margin { get; set; } = 100; //左右边距
-
-    public int TopMargin { get; set; } = 50;
-
-    public int TextCellSpacing { get; set; } = 20; //单元文字边距
-
-    public int LineMaxMenu { get; set; } = 3; //一行最多几个
-
-    public int AvatarSize { get; set; } = 200; //头像大小
-
-    public int AvatarTop { get; set; } = 50; //头像距离顶部距离
-
-    public int AvatarBottom { get; set; } = 50; //头像与底部距离
-
-    public int CardPadding { get; set; } = 100; //背景卡片与图片边距
-
+    public int SmallFontSize { get; set; } = 20;
+    public int CellSpaced { get; set; } = 70;
+    public int CellWidth { get; set; } = 400;
+    public int TextCellSpacing { get; set; } = 20;
+    public int LineMaxMenu { get; set; } = 3;
+    public new int AvatarTop { get; set; } = 50;
+    public int AvatarBottom { get; set; } = 50;
+    public int CardPadding { get; set; } = 100;
     public int CardTopPadding { get; set; } = 200;
 
-    public string Signature { get; set; } = "Generated by Lagrange.XocMat";
+    private MenuBuilder? _currentBuilder;
+    private int _totalWidth;
+    private int _totalHeight;
 
-    public int SignatureFontSize { get; set; } = 20;
-
-    public long MemberUin { get; set; } = 523321293;
-
-    public Color CardColor { get; set; } = Color.FromRgba(255, 255, 255, 230);
-
-
-
-    public (int Width, int Height) ComputeLayout(MenuBuilder builder)
+    public byte[] Generate(MenuBuilder builder)
     {
-        FontFamily fontFamily = ImageUtility.GetFontFamily();
-        Font font = fontFamily.CreateFont(FontSize);
-        Font smallFont = fontFamily.CreateFont(SmallFontSize);
-        Font signatureFont = fontFamily.CreateFont(SignatureFontSize);
+        _currentBuilder = builder;
+        try
+        {
+            return base.Generate();
+        }
+        finally
+        {
+            _currentBuilder = null;
+        }
+    }
 
-        int totalWidth = (Margin * 2) + (CellWidth * LineMaxMenu) + (TextCellSpacing * (LineMaxMenu - 1)) + (CardPadding * 2);
-        int totalHeight = (TopMargin * 2) + AvatarTop + AvatarSize + AvatarBottom + CellSpaced + (CardTopPadding * 2); // 调整总高度，考虑头像的高度和间距
+    protected override (int Width, int Height) ComputeLayout()
+    {
+        if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
+
+        Font font = CreateFont(Config.FontSize);
+        Font smallFont = CreateFont(SmallFontSize);
+        Font signatureFont = CreateFont(Config.SignatureFontSize);
+
+        _totalWidth = (CardMargin * 2) + (CellWidth * LineMaxMenu) + (TextCellSpacing * (LineMaxMenu - 1)) + (CardPadding * 2);
+        _totalHeight = (Config.CardTopMargin * 2) + AvatarTop + Config.AvatarSize + AvatarBottom + CellSpaced + (CardTopPadding * 2);
 
         int currentLineHeight = 0;
-        int currentLineWidth = 0;
-        int lineCount = 1;
         int cellCountInLine = 0;
 
-        foreach (MenuCell cell in builder.MenuCells)
+        foreach (MenuCell cell in _currentBuilder.MenuCells)
         {
             TextOptions textOptions = new TextOptions(font) { WrappingLength = CellWidth };
             FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
@@ -199,104 +174,70 @@ public class MenuGenerate
             FontRectangle smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
 
             int cellHeight = (int)(textSize.Height + smallTextSize.Height) + (TextCellSpacing * 2) + 8;
-            int cellWidth = CellWidth + TextCellSpacing;
 
             if (cellCountInLine >= LineMaxMenu)
             {
-                totalHeight += currentLineHeight + CellSpaced;
+                _totalHeight += currentLineHeight + CellSpaced;
                 currentLineHeight = cellHeight;
-                currentLineWidth = cellWidth;
                 cellCountInLine = 1;
-                lineCount++;
             }
             else
             {
                 currentLineHeight = Math.Max(currentLineHeight, cellHeight);
-                currentLineWidth += cellWidth + TextCellSpacing;
                 cellCountInLine++;
             }
         }
 
-        totalHeight += currentLineHeight;
+        _totalHeight += currentLineHeight;
 
         // 添加签名的高度
-        TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
-        FontRectangle signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
-        totalHeight += (int)signatureSize.Height + 60; // 60 是签名与单元格之间的距离
+        TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = _totalWidth };
+        FontRectangle signatureSize = TextMeasurer.MeasureSize(Config.Signature, signatureOptions);
+        _totalHeight += (int)signatureSize.Height + 60;
 
-        return (totalWidth, totalHeight);
+        return (_totalWidth, _totalHeight);
     }
 
-
-
-    public byte[] DrawContent(MenuBuilder builder)
+    protected override void DrawContent(IImageProcessingContext ctx, int width, int height)
     {
-        (int totalWidth, int totalHeight) = ComputeLayout(builder);
+        if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
 
-        using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
-        using Image<Rgba32> image = background.Crop(totalWidth, totalHeight);
+        Font font = CreateFont(Config.FontSize);
+        Font smallFont = CreateFont(SmallFontSize);
 
-        FontFamily fontFamily = ImageUtility.GetFontFamily();
-        Font font = fontFamily.CreateFont(FontSize);
-        Font smallFont = fontFamily.CreateFont(SmallFontSize);
-        Font signatureFont = fontFamily.CreateFont(SignatureFontSize);
-
-        int currentX = Margin + CardPadding;
-        int currentY = TopMargin + AvatarTop + AvatarSize + AvatarBottom + CardTopPadding; // 调整Y坐标，使单元格在头像下方开始，并增加间距
+        int currentX = CardMargin + CardPadding;
+        int currentY = Config.CardTopMargin + AvatarTop + Config.AvatarSize + AvatarBottom + CardTopPadding;
         int currentLineHeight = 0;
         int cellCountInLine = 0;
 
-        // 获取头像并绘制在图片上方
-        Image<Rgba32> avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
+        ctx.DrawRoundedRectangle(CardPadding, CardTopPadding, width - (2 * CardPadding), height - (CardTopPadding * 2), 60, Config.CardBackgroundColor);
+        DrawCenteredAvatar(ctx, AvatarTop + CardTopPadding, width);
 
-        image.Mutate(ctx =>
+        foreach (MenuCell cell in _currentBuilder.MenuCells)
         {
+            DrawMenuCell(ctx, cell, ref currentX, ref currentY, ref currentLineHeight, ref cellCountInLine, font, smallFont);
+        }
 
-            //绘制背景卡片，增加边距，并确保不盖住头像
-            //int cardMargin = CardTopPadding;
-            //int cardTopMargin = TopMargin + AvatarTop + AvatarSize + AvatarBottom;
-            ctx.DrawRoundedRectangle(CardPadding, CardTopPadding, totalWidth - (2 * CardPadding), totalHeight - (CardTopPadding * 2), 60, CardColor);
-            DrawAvatar(ctx, avatar, totalWidth);
-            foreach (MenuCell cell in builder.MenuCells)
-            {
-                DrawMenuCell(ctx, cell, ref currentX, ref currentY, ref currentLineHeight, ref cellCountInLine, font, smallFont);
-            }
-
-            // 绘制签名
-            TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
-            FontRectangle signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
-            float signatureX = (totalWidth - signatureSize.Width) / 2;
-            float signatureY = currentY + currentLineHeight + 60; // 60 是签名与单元格之间的距离
-            ctx.DrawText(Signature, signatureFont, Color.Gray, new PointF(signatureX, signatureY));
-        });
-
-        return image.ToBytesAsync().Result;
-    }
-
-    private void DrawAvatar(IImageProcessingContext ctx, Image<Rgba32> avatar, int totalWidth)
-    {
-        ctx.DrawImage(avatar, new Point((totalWidth - AvatarSize) / 2, AvatarTop + CardTopPadding), 1f);
+        Font signatureFont = CreateFont(Config.SignatureFontSize);
+        var signatureOptions = new TextOptions(signatureFont) { WrappingLength = width };
+        FontRectangle signatureSize = TextMeasurer.MeasureSize(Config.Signature, signatureOptions);
+        float signatureX = (width - signatureSize.Width) / 2;
+        float signatureY = currentY + currentLineHeight + 60;
+        ctx.DrawText(Config.Signature, signatureFont, Color.Gray, new PointF(signatureX, signatureY));
     }
 
     private void DrawMenuCell(IImageProcessingContext ctx, MenuCell cell, ref int currentX, ref int currentY, ref int currentLineHeight, ref int cellCountInLine, Font font, Font smallFont)
     {
-        TextOptions textOptions = new TextOptions(font)
-        {
-            WrappingLength = CellWidth
-        };
+        TextOptions textOptions = new TextOptions(font) { WrappingLength = CellWidth };
         FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
-        TextOptions smallTextOptions = new TextOptions(smallFont)
-        {
-            WrappingLength = CellWidth
-        };
+        TextOptions smallTextOptions = new TextOptions(smallFont) { WrappingLength = CellWidth };
         FontRectangle smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
 
         int cellHeight = (int)(textSize.Height + smallTextSize.Height) + (TextCellSpacing * 2) + 8;
-        int cellWidth = CellWidth;
 
         if (cellCountInLine >= LineMaxMenu)
         {
-            currentX = Margin + CardPadding;
+            currentX = CardMargin + CardPadding;
             currentY += currentLineHeight + CellSpaced;
             currentLineHeight = cellHeight;
             cellCountInLine = 0;
@@ -308,25 +249,15 @@ public class MenuGenerate
 
         Color textColor = cell.UseColor ? cell.Color : Color.Black;
 
-        // 绘制卡片背景
-        ctx.DrawRoundedRectangle(currentX, currentY, cellWidth, currentLineHeight, 30, CardColor);
-        ctx.DrawRoundedRectanglePath(currentX, currentY, cellWidth, currentLineHeight, 30, 6, Color.Wheat);
+        ctx.DrawRoundedRectangle(currentX, currentY, CellWidth, currentLineHeight, 30, Config.CardBackgroundColor);
+        ctx.DrawRoundedRectanglePath(currentX, currentY, CellWidth, currentLineHeight, 30, 6, Color.Wheat);
 
-        // 计算文本和说明的总高度
-        float totalTextHeight = textSize.Height + smallTextSize.Height;
+        float totalTextHeight = textSize.Height + smallTextSize.Height + 8;
+        float startY = currentY + (currentLineHeight - totalTextHeight) / 2;
 
-        // 计算文本和说明的起始位置，使其上下边距一致
-        float textY = currentY + ((currentLineHeight - totalTextHeight) / 2);
-        float smallTextY = textY + textSize.Height + 8; // 调整 smallTextY 位置
-
-        // 计算文本和说明的水平起始位置，使其水平居中
-        float textX = currentX + ((cellWidth - textSize.Width) / 2);
-        float smallTextX = currentX + ((cellWidth - smallTextSize.Width) / 2);
-
-        // 绘制文本
         ctx.DrawText(new RichTextOptions(font)
         {
-            Origin = new PointF(currentX + (cellWidth / 2), textY + TextCellSpacing),
+            Origin = new PointF(currentX + (CellWidth / 2), startY + textSize.Height / 2),
             WrappingLength = CellWidth,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
@@ -334,16 +265,13 @@ public class MenuGenerate
 
         ctx.DrawText(new RichTextOptions(smallFont)
         {
-            Origin = new PointF(currentX + (cellWidth / 2), smallTextY + TextCellSpacing),
+            Origin = new PointF(currentX + (CellWidth / 2), startY + textSize.Height + 8 + smallTextSize.Height / 2),
             WrappingLength = CellWidth,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         }, cell.SmallText, Color.DarkGray);
 
-        currentX += cellWidth + TextCellSpacing;
+        currentX += CellWidth + TextCellSpacing;
         cellCountInLine++;
     }
-
-
 }
-
