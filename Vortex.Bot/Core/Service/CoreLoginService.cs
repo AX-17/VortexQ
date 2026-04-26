@@ -1,6 +1,5 @@
 using Lagrange.Core;
 using Lagrange.Core.Common;
-using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Message.Entities;
@@ -66,13 +65,13 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
 
     private async Task CommandGroupAdapter(BotContext ctx, BotMessageEvent e)
     {
-        var text = e.Message.Entities.GetEnitys<TextEntity>().ToJoinedString(x => x.Text, "");
+        string text = e.Message.Entities.GetEnitys<TextEntity>().ToJoinedString(x => x.Text, "");
         await _cmd.ExecuteGroupAsync(text, e, _vortexContext);
     }
 
     private async Task CommandPrivateAdapter(BotContext ctx, BotMessageEvent e)
     {
-        var text = e.Message.Entities.GetEnitys<TextEntity>().ToJoinedString(x => x.Text, "");
+        string text = e.Message.Entities.GetEnitys<TextEntity>().ToJoinedString(x => x.Text, "");
         await _cmd.ExecutePrivateAsync(text, e, _vortexContext);
     }
 
@@ -102,13 +101,13 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
 
     private async Task HandleCaptcha(BotContext bot, BotCaptchaEvent @event)
     {
-        var (ticket, randstr) = await _captchaResolver.ResolveCaptchaAsync(@event.CaptchaUrl, _cts?.Token ?? default);
+        (string? ticket, string? randstr) = await _captchaResolver.ResolveCaptchaAsync(@event.CaptchaUrl, _cts?.Token ?? default);
         _bot.SubmitCaptcha(ticket, randstr);
     }
 
     private async Task HandleRefreshKeystore(BotContext bot, BotRefreshKeystoreEvent @event)
     {
-        var keystore = @event.Keystore;
+        BotKeystore keystore = @event.Keystore;
         await File.WriteAllBytesAsync(
             $"{keystore.Uin}.keystore",
             JsonUtility.SerializeToUtf8Bytes(keystore),
@@ -118,7 +117,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
 
     private void HandleQrCodeQuery(BotContext bot, BotQrCodeQueryEvent @event)
     {
-        var level = @event.State switch
+        MSLogLevel level = @event.State switch
         {
             TransEmpState.Confirmed or
             TransEmpState.WaitingForScan or

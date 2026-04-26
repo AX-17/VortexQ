@@ -12,10 +12,10 @@ public static class HelpCommand
     [Main]
     public static async Task ShowHelp(GroupCommandArgs args)
     {
-        var commands = args.Context.CommandManager.GetAllCommandInfos(CommandType.Group, includeSubCommands: false);
-        var builder = MenuBuilder.Create()
+        IEnumerable<CommandInfo> commands = args.Context.CommandManager.GetAllCommandInfos(CommandType.Group, includeSubCommands: false);
+        MenuBuilder builder = MenuBuilder.Create()
             .SetMemberUin(args.Member?.Uin ?? 0);
-        foreach (var command in commands)
+        foreach (CommandInfo command in commands)
         {
             builder.AddCell(command.Aliases.First(), command.HelpText ?? "");
         }

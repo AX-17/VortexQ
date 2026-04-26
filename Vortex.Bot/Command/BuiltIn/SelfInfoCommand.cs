@@ -1,5 +1,4 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Database.Models;
 using Vortex.Bot.Utility.Images;
 
@@ -14,10 +13,10 @@ public static class SelfInfoCommand
     [Main]
     public static async Task ShowInfo(GroupCommandArgs args)
     {
-        var currency = Currency.Query(args.SenderUin);
-        var sign = Sign.Query(args.SenderUin);
+        Currency? currency = Currency.Query(args.SenderUin);
+        Sign? sign = Sign.Query(args.SenderUin);
 
-        var builder = ProfileItemBuilder.Create()
+        ProfileItemBuilder builder = ProfileItemBuilder.Create()
             .SetMemberUin((uint)args.SenderUin)
             .SetTitle("个人信息")
             .AddItem("QQ", args.SenderUin.ToString())
@@ -33,10 +32,10 @@ public static class SelfInfoCommand
     [Main]
     public static async Task ShowInfo(PrivateCommandArgs args)
     {
-        var currency = Currency.Query(args.SenderUin);
-        var sign = Sign.Query(args.SenderUin);
+        Currency? currency = Currency.Query(args.SenderUin);
+        Sign? sign = Sign.Query(args.SenderUin);
 
-        var builder = ProfileItemBuilder.Create()
+        ProfileItemBuilder builder = ProfileItemBuilder.Create()
             .SetMemberUin((uint)args.SenderUin)
             .SetTitle("个人信息")
             .AddItem("QQ", args.SenderUin.ToString())

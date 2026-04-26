@@ -1,4 +1,4 @@
-﻿﻿using SixLabors.Fonts;
+﻿using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -178,27 +178,27 @@ public class MenuGenerate
 
     public (int Width, int Height) ComputeLayout(MenuBuilder builder)
     {
-        var fontFamily = ImageUtility.GetFontFamily();
-        var font = fontFamily.CreateFont(FontSize);
-        var smallFont = fontFamily.CreateFont(SmallFontSize);
-        var signatureFont = fontFamily.CreateFont(SignatureFontSize);
+        FontFamily fontFamily = ImageUtility.GetFontFamily();
+        Font font = fontFamily.CreateFont(FontSize);
+        Font smallFont = fontFamily.CreateFont(SmallFontSize);
+        Font signatureFont = fontFamily.CreateFont(SignatureFontSize);
 
-        int totalWidth = Margin * 2 + CellWidth * LineMaxMenu + TextCellSpacing * (LineMaxMenu - 1) + CardPadding * 2;
-        int totalHeight = TopMargin * 2 + AvatarTop + AvatarSize + AvatarBottom + CellSpaced + CardTopPadding * 2; // 调整总高度，考虑头像的高度和间距
+        int totalWidth = (Margin * 2) + (CellWidth * LineMaxMenu) + (TextCellSpacing * (LineMaxMenu - 1)) + (CardPadding * 2);
+        int totalHeight = (TopMargin * 2) + AvatarTop + AvatarSize + AvatarBottom + CellSpaced + (CardTopPadding * 2); // 调整总高度，考虑头像的高度和间距
 
         int currentLineHeight = 0;
         int currentLineWidth = 0;
         int lineCount = 1;
         int cellCountInLine = 0;
 
-        foreach (var cell in builder.MenuCells)
+        foreach (MenuCell cell in builder.MenuCells)
         {
-            var textOptions = new TextOptions(font) { WrappingLength = CellWidth };
-            var textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
-            var smallTextOptions = new TextOptions(smallFont) { WrappingLength = CellWidth };
-            var smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
+            TextOptions textOptions = new TextOptions(font) { WrappingLength = CellWidth };
+            FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
+            TextOptions smallTextOptions = new TextOptions(smallFont) { WrappingLength = CellWidth };
+            FontRectangle smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
 
-            int cellHeight = (int)(textSize.Height + smallTextSize.Height) + TextCellSpacing * 2 + 8;
+            int cellHeight = (int)(textSize.Height + smallTextSize.Height) + (TextCellSpacing * 2) + 8;
             int cellWidth = CellWidth + TextCellSpacing;
 
             if (cellCountInLine >= LineMaxMenu)
@@ -220,8 +220,8 @@ public class MenuGenerate
         totalHeight += currentLineHeight;
 
         // 添加签名的高度
-        var signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
-        var signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
+        TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
+        FontRectangle signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
         totalHeight += (int)signatureSize.Height + 60; // 60 是签名与单元格之间的距离
 
         return (totalWidth, totalHeight);
@@ -231,15 +231,15 @@ public class MenuGenerate
 
     public byte[] DrawContent(MenuBuilder builder)
     {
-        var (totalWidth, totalHeight) = ComputeLayout(builder);
+        (int totalWidth, int totalHeight) = ComputeLayout(builder);
 
-        using var background = Image.Load<Rgba32>(BackgroundPath);
-        using var image = background.Crop(totalWidth, totalHeight);
+        using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
+        using Image<Rgba32> image = background.Crop(totalWidth, totalHeight);
 
-        var fontFamily = ImageUtility.GetFontFamily();
-        var font = fontFamily.CreateFont(FontSize);
-        var smallFont = fontFamily.CreateFont(SmallFontSize);
-        var signatureFont = fontFamily.CreateFont(SignatureFontSize);
+        FontFamily fontFamily = ImageUtility.GetFontFamily();
+        Font font = fontFamily.CreateFont(FontSize);
+        Font smallFont = fontFamily.CreateFont(SmallFontSize);
+        Font signatureFont = fontFamily.CreateFont(SignatureFontSize);
 
         int currentX = Margin + CardPadding;
         int currentY = TopMargin + AvatarTop + AvatarSize + AvatarBottom + CardTopPadding; // 调整Y坐标，使单元格在头像下方开始，并增加间距
@@ -247,7 +247,7 @@ public class MenuGenerate
         int cellCountInLine = 0;
 
         // 获取头像并绘制在图片上方
-        var avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
+        Image<Rgba32> avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
 
         image.Mutate(ctx =>
         {
@@ -255,16 +255,16 @@ public class MenuGenerate
             //绘制背景卡片，增加边距，并确保不盖住头像
             //int cardMargin = CardTopPadding;
             //int cardTopMargin = TopMargin + AvatarTop + AvatarSize + AvatarBottom;
-            ctx.DrawRoundedRectangle(CardPadding, CardTopPadding, totalWidth - 2 * CardPadding, totalHeight - CardTopPadding * 2, 60, CardColor);
+            ctx.DrawRoundedRectangle(CardPadding, CardTopPadding, totalWidth - (2 * CardPadding), totalHeight - (CardTopPadding * 2), 60, CardColor);
             DrawAvatar(ctx, avatar, totalWidth);
-            foreach (var cell in builder.MenuCells)
+            foreach (MenuCell cell in builder.MenuCells)
             {
                 DrawMenuCell(ctx, cell, ref currentX, ref currentY, ref currentLineHeight, ref cellCountInLine, font, smallFont);
             }
 
             // 绘制签名
-            var signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
-            var signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
+            TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = totalWidth };
+            FontRectangle signatureSize = TextMeasurer.MeasureSize(Signature, signatureOptions);
             float signatureX = (totalWidth - signatureSize.Width) / 2;
             float signatureY = currentY + currentLineHeight + 60; // 60 是签名与单元格之间的距离
             ctx.DrawText(Signature, signatureFont, Color.Gray, new PointF(signatureX, signatureY));
@@ -280,18 +280,18 @@ public class MenuGenerate
 
     private void DrawMenuCell(IImageProcessingContext ctx, MenuCell cell, ref int currentX, ref int currentY, ref int currentLineHeight, ref int cellCountInLine, Font font, Font smallFont)
     {
-        var textOptions = new TextOptions(font)
+        TextOptions textOptions = new TextOptions(font)
         {
             WrappingLength = CellWidth
         };
-        var textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
-        var smallTextOptions = new TextOptions(smallFont)
+        FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, textOptions);
+        TextOptions smallTextOptions = new TextOptions(smallFont)
         {
             WrappingLength = CellWidth
         };
-        var smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
+        FontRectangle smallTextSize = TextMeasurer.MeasureSize(cell.SmallText, smallTextOptions);
 
-        int cellHeight = (int)(textSize.Height + smallTextSize.Height) + TextCellSpacing * 2 + 8;
+        int cellHeight = (int)(textSize.Height + smallTextSize.Height) + (TextCellSpacing * 2) + 8;
         int cellWidth = CellWidth;
 
         if (cellCountInLine >= LineMaxMenu)
@@ -306,7 +306,7 @@ public class MenuGenerate
             currentLineHeight = Math.Max(currentLineHeight, cellHeight);
         }
 
-        var textColor = cell.UseColor ? cell.Color : Color.Black;
+        Color textColor = cell.UseColor ? cell.Color : Color.Black;
 
         // 绘制卡片背景
         ctx.DrawRoundedRectangle(currentX, currentY, cellWidth, currentLineHeight, 30, CardColor);
@@ -316,17 +316,17 @@ public class MenuGenerate
         float totalTextHeight = textSize.Height + smallTextSize.Height;
 
         // 计算文本和说明的起始位置，使其上下边距一致
-        float textY = currentY + (currentLineHeight - totalTextHeight) / 2;
+        float textY = currentY + ((currentLineHeight - totalTextHeight) / 2);
         float smallTextY = textY + textSize.Height + 8; // 调整 smallTextY 位置
 
         // 计算文本和说明的水平起始位置，使其水平居中
-        float textX = currentX + (cellWidth - textSize.Width) / 2;
-        float smallTextX = currentX + (cellWidth - smallTextSize.Width) / 2;
+        float textX = currentX + ((cellWidth - textSize.Width) / 2);
+        float smallTextX = currentX + ((cellWidth - smallTextSize.Width) / 2);
 
         // 绘制文本
         ctx.DrawText(new RichTextOptions(font)
         {
-            Origin = new PointF(currentX + cellWidth / 2, textY + TextCellSpacing),
+            Origin = new PointF(currentX + (cellWidth / 2), textY + TextCellSpacing),
             WrappingLength = CellWidth,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
@@ -334,7 +334,7 @@ public class MenuGenerate
 
         ctx.DrawText(new RichTextOptions(smallFont)
         {
-            Origin = new PointF(currentX + cellWidth / 2, smallTextY + TextCellSpacing),
+            Origin = new PointF(currentX + (cellWidth / 2), smallTextY + TextCellSpacing),
             WrappingLength = CellWidth,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center

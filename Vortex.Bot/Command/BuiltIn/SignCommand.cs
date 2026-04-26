@@ -1,5 +1,4 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Database.Models;
 
 namespace Vortex.Bot.Command.BuiltIn;
@@ -13,18 +12,18 @@ public static class SignCommand
     [Main]
     public static async Task SignIn(GroupCommandArgs args)
     {
-        var account = args.Account;
+        Account account = args.Account;
         if (account == null)
         {
             await args.ReplyAsync("请先注册账号！");
             return;
         }
 
-        var rand = new Random();
+        Random rand = new Random();
         var reward = rand.Next(10, 100);
 
-        var sign = Sign.DoSignIn(args.SenderUin);
-        var currency = Currency.Add(args.SenderUin, reward);
+        Sign sign = Sign.DoSignIn(args.SenderUin);
+        Currency currency = Currency.Add(args.SenderUin, reward);
 
         var reply = $"签到成功！\n" +
                     $"QQ: {args.SenderUin}\n" +

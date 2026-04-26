@@ -1,5 +1,4 @@
 using System.Reflection;
-using Vortex.Bot.Attributes;
 
 namespace Vortex.Bot.Command;
 
@@ -26,7 +25,7 @@ internal sealed class CommandExecutor : CommandBase
         _executorType = executorType;
         _minArgs = minArgs;
 
-        var parameters = method.GetParameters();
+        ParameterInfo[] parameters = method.GetParameters();
         ValidateParameters(parameters);
 
         _argsType = parameters[0].ParameterType;
@@ -51,46 +50,40 @@ internal sealed class CommandExecutor : CommandBase
         if (current > 0)
             UpdateInfo(args.Params[current - 1]);
 
-        if (!SupportsArgsType(args.GetType()))
-            return CreateResult(int.MaxValue);
-
-        return await ExecuteAsync(args, current);
+        return !SupportsArgsType(args.GetType()) ? CreateResult(int.MaxValue) : await ExecuteAsync(args, current);
     }
 
     private async Task<ParseResult> ExecuteAsync(CommandArgs args, int current)
     {
-        var parameters = args.Params;
-        var validation = _argumentBinder.GetValidationRules(current, _executorType, _minArgs);
+        List<string> parameters = args.Params;
+        ValidationResult validation = _argumentBinder.GetValidationRules(current, _executorType, _minArgs);
 
         if (parameters.Count < validation.MinArgs)
             return CreateResult(validation.MinArgs - parameters.Count);
 
         if (_executorType == ExecutorType.Normal)
         {
-            var expectedCount = _argumentBinder.ParameterInfo.Split('<').Length - 1 + current;
+            int expectedCount = _argumentBinder.ParameterInfo.Split('<').Length - 1 + current;
             if (parameters.Count != expectedCount)
                 return CreateResult(Math.Abs(expectedCount - parameters.Count));
         }
 
-        var parsedArgs = _argumentBinder.ParseArguments(parameters, current);
-        if (parsedArgs == null)
-            return CreateResult(1);
-
-        return await InvokeMethodAsync(args, parsedArgs);
+        object?[]? parsedArgs = _argumentBinder.ParseArguments(parameters, current);
+        return parsedArgs == null ? CreateResult(1) : await InvokeMethodAsync(args, parsedArgs);
     }
 
     private async Task<ParseResult> InvokeMethodAsync(CommandArgs args, object?[] invokeArgs)
     {
         invokeArgs[0] = args;
 
-        var permResult = await CheckPermissionAsync(args);
+        PermissionCheckResult permResult = await CheckPermissionAsync(args);
         if (permResult.Result != PermissionResult.Granted)
         {
             await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
             return CreateResult(0);
         }
 
-        var result = _method.Invoke(null, invokeArgs);
+        object? result = _method.Invoke(null, invokeArgs);
         if (result is Task task)
             await task;
 

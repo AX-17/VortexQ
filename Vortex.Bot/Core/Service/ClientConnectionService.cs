@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
-using Microsoft.Extensions.Logging;
 using Vortex.Bot.Models;
 using Vortex.Protocol.Packets;
 
@@ -18,9 +18,9 @@ public class ClientConnectionService(ILogger<ClientConnectionService> logger)
 
     public ClientConnection RegisterClient(ClientIdentityPacket packet, TcpClient tcpClient, string endpoint)
     {
-        var sessionId = Interlocked.Increment(ref _nextSessionId);
+        int sessionId = Interlocked.Increment(ref _nextSessionId);
 
-        var client = new ClientConnection
+        ClientConnection client = new ClientConnection
         {
             ClientId = packet.ClientId,
             ClientName = packet.ClientName,
@@ -70,11 +70,7 @@ public class ClientConnectionService(ILogger<ClientConnectionService> logger)
 
     public ClientConnection? GetClientBySession(int sessionId)
     {
-        if (_sessionToClientId.TryGetValue(sessionId, out var clientId))
-        {
-            return GetClient(clientId);
-        }
-        return null;
+        return _sessionToClientId.TryGetValue(sessionId, out var clientId) ? GetClient(clientId) : null;
     }
 
     public ClientConnection? GetClientByName(string clientName)
@@ -90,7 +86,7 @@ public class ClientConnectionService(ILogger<ClientConnectionService> logger)
 
     public async Task DisconnectAllAsync()
     {
-        var clientIds = _clientsById.Keys.ToList();
+        List<Guid> clientIds = _clientsById.Keys.ToList();
         foreach (var clientId in clientIds)
         {
             await RemoveClientAsync(clientId);

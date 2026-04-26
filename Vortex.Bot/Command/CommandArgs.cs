@@ -44,10 +44,7 @@ public abstract class CommandArgs(VortexContext context, List<string> @params, B
 
     public bool HasPermission(string permission)
     {
-        if (IsSuperAdmin)
-            return true;
-
-        return Group.HasPermission(permission);
+        return IsSuperAdmin ? true : Group.HasPermission(permission);
     }
 
     public abstract Task ReplyAsync(string message);
@@ -58,8 +55,7 @@ public abstract class CommandArgs(VortexContext context, List<string> @params, B
 
     public string GetTextContent()
     {
-        if (MessageChain == null) return string.Empty;
-        return string.Join("", MessageChain.OfType<TextEntity>().Select(t => t.Text));
+        return MessageChain == null ? string.Empty : string.Join("", MessageChain.OfType<TextEntity>().Select(t => t.Text));
     }
 }
 
@@ -81,7 +77,7 @@ public class GroupCommandArgs : CommandArgs
 
     public override async Task ReplyAsync(string message)
     {
-        var builder = new MessageBuilder();
+        MessageBuilder builder = new MessageBuilder();
         builder.Text(message);
         await BotContext.SendGroupMessage(GroupUin, builder.Build());
     }
@@ -93,14 +89,14 @@ public class GroupCommandArgs : CommandArgs
 
     public override async Task ReplyImageAsync(byte[] imageData)
     {
-        var builder = new MessageBuilder();
+        MessageBuilder builder = new MessageBuilder();
         builder.Image(imageData);
         await BotContext.SendGroupMessage(GroupUin, builder.Build());
     }
 
     public async Task ReplyWithAtAsync(string message)
     {
-        var builder = new MessageBuilder();
+        MessageBuilder builder = new MessageBuilder();
         builder.Mention(SenderUin, SenderDisplayName ?? "");
         builder.Text(" " + message);
         await BotContext.SendGroupMessage(GroupUin, builder.Build());
@@ -123,7 +119,7 @@ public class PrivateCommandArgs : CommandArgs
 
     public override async Task ReplyAsync(string message)
     {
-        var builder = new MessageBuilder();
+        MessageBuilder builder = new MessageBuilder();
         builder.Text(message);
         await BotContext.SendFriendMessage(FriendUin, builder.Build());
     }
@@ -135,7 +131,7 @@ public class PrivateCommandArgs : CommandArgs
 
     public override async Task ReplyImageAsync(byte[] imageData)
     {
-        var builder = new MessageBuilder();
+        MessageBuilder builder = new MessageBuilder();
         builder.Image(imageData);
         await BotContext.SendFriendMessage(FriendUin, builder.Build());
     }
@@ -173,24 +169,24 @@ public class ServerCommandArgs : CommandArgs
 
     public override async Task ReplyAsync(string message)
     {
-        #pragma warning disable CS8602
+#pragma warning disable CS8602
         _ = await VortexSocketService?.SendToSessionAsync(SessionId, new PrivateMessagePacket()
         {
             Text = message,
             Name = Player.Name,
             Color = [255, 255, 255]
         });
-        #pragma warning restore CS8602
+#pragma warning restore CS8602
     }
 
     public override async Task ReplyAsync(MessageChain chain)
     {
-        var text = string.Join("", chain.OfType<TextEntity>().Select(t => t.Text));
+        string text = string.Join("", chain.OfType<TextEntity>().Select(t => t.Text));
         await ReplyAsync(text);
     }
 
     public override async Task ReplyImageAsync(byte[] imageData)
     {
-        
+
     }
 }

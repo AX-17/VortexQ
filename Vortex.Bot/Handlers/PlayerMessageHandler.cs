@@ -17,14 +17,14 @@ public class PlayerMessageHandler : RoutedPushHandlerBase<PlayerMessagePacket>
             Server?.VortexContext.CommandManager.ExecuteServerAsync(packet.Message, Context, packet.Player, context.SenderSessionId);
             return;
         }
-        var servers = Context?.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? servers = Context?.Server?.Services.GetService<TerrariaServerService>();
         if (servers == null) return;
-        var message = new MessageBuilder()
+        MessageChain message = new MessageBuilder()
             .Text($"Íæ¼Ò {packet.Player.Name}: {packet.Message}")
             .Build();
-        foreach (var server in servers.GetAllServers())
+        foreach (TerrariaServer server in servers.GetAllServers())
         {
-            foreach(var groupid in server.Config.Groups)
+            foreach (long groupid in server.Config.Groups)
             {
                 Context?.BotContext.SendGroupMessage(groupid, message);
             }

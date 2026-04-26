@@ -37,7 +37,7 @@ public sealed class Signer : BotSignProvider, IDisposable
 
     public Signer(IOptions<CoreConfiguration> options)
     {
-        var signerConfiguration = options.Value.Signer;
+        SignerConfiguration signerConfiguration = options.Value.Signer;
         _url = signerConfiguration.Url ?? throw new Exception("Core.Signer.Url cannot be null");
         _client = new HttpClient(new HttpClientHandler
         {
@@ -56,7 +56,7 @@ public sealed class Signer : BotSignProvider, IDisposable
 
     public override async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {
-        using var request = new HttpRequestMessage();
+        using HttpRequestMessage request = new HttpRequestMessage();
         request.Method = HttpMethod.Post;
         request.RequestUri = new Uri($"{_url}{(_url.EndsWith('/') ? "" : "/")}api/sign/sec-sign");
         if (!string.IsNullOrEmpty(_token))
@@ -77,20 +77,21 @@ public sealed class Signer : BotSignProvider, IDisposable
             MediaTypeNames.Application.Json
         );
 
-        using var response = await _client.SendAsync(request);
+        using HttpResponseMessage response = await _client.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
-        using var stream = await response.Content.ReadAsStreamAsync();
-        var result = JsonUtility.Deserialize<SignerResponse<SecSignResponse>>(stream);
-        if (result == null) throw new Exception("Signer response serialization failed");
-        if (result.Code != 0) throw new Exception($"Signer server exception: ({result.Code}){result.Message}");
-
-        return new SsoSecureInfo
-        {
-            SecSign = Convert.FromHexString(result.Value.SecSign),
-            SecToken = Convert.FromHexString(result.Value.SecToken),
-            SecExtra = Convert.FromHexString(result.Value.SecExtra),
-        };
+        using Stream stream = await response.Content.ReadAsStreamAsync();
+        SignerResponse<SecSignResponse>? result = JsonUtility.Deserialize<SignerResponse<SecSignResponse>>(stream);
+        return result == null
+            ? throw new Exception("Signer response serialization failed")
+            : result.Code != 0
+            ? throw new Exception($"Signer server exception: ({result.Code}){result.Message}")
+            : new SsoSecureInfo
+            {
+                SecSign = Convert.FromHexString(result.Value.SecSign),
+                SecToken = Convert.FromHexString(result.Value.SecToken),
+                SecExtra = Convert.FromHexString(result.Value.SecExtra),
+            };
     }
 
 

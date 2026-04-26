@@ -18,11 +18,11 @@ public static class AbbreviationCommand
             return;
         }
 
-        var text = args.Params[0];
+        string text = args.Params[0];
 
         try
         {
-            using var client = new HttpClient();
+            using HttpClient client = new HttpClient();
             string url = $"https://oiapi.net/API/Nbnhhsh?text={Uri.EscapeDataString(text)}";
             string result = await client.GetStringAsync(url);
 

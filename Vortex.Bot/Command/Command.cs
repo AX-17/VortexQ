@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Text;
 
 namespace Vortex.Bot.Command;
 
@@ -23,16 +22,16 @@ internal sealed class Command : CommandBase
     {
         _mainCommands.Add(new HelpCommand(this, _infoPrefix));
 
-        var firstExecutor = GetAllSubCommands()
+        CommandExecutor? firstExecutor = GetAllSubCommands()
             .OfType<CommandExecutor>()
             .FirstOrDefault();
 
         if (firstExecutor != null)
         {
-            var paramInfo = firstExecutor.ParameterInfo;
+            string paramInfo = firstExecutor.ParameterInfo;
             if (!string.IsNullOrEmpty(paramInfo))
             {
-                var hasMainCommand = _mainCommands.Any(sub => sub is CommandExecutor);
+                bool hasMainCommand = _mainCommands.Any(sub => sub is CommandExecutor);
                 Info = hasMainCommand
                     ? $"{_infoPrefix}{paramInfo}"
                     : $"{_infoPrefix} <...>{paramInfo}";
@@ -46,7 +45,7 @@ internal sealed class Command : CommandBase
         {
             _mainCommands.Add(sub);
         }
-        else if (_namedCommands.TryGetValue(cmd, out var list))
+        else if (_namedCommands.TryGetValue(cmd, out List<CommandBase>? list))
         {
             list.Add(sub);
         }
@@ -58,18 +57,18 @@ internal sealed class Command : CommandBase
 
     public override async Task<ParseResult> TryParseAsync(CommandArgs args, int current, string commandName)
     {
-        var permResult = await CheckPermissionAsync(args);
+        PermissionCheckResult permResult = await CheckPermissionAsync(args);
         if (permResult.Result != PermissionResult.Granted)
         {
             await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
             return CreateResult(0);
         }
 
-        var bestMatch = CreateResult(args.Params.Count - current + 1);
+        ParseResult bestMatch = CreateResult(args.Params.Count - current + 1);
 
         if (current < args.Params.Count && args.Params[current] == "help" && !_skipHelp)
         {
-            var helpResult = await TryParseHelpAsync(args, current, commandName);
+            ParseResult helpResult = await TryParseHelpAsync(args, current, commandName);
             if (helpResult.Unmatched == 0)
                 return helpResult;
 
@@ -77,11 +76,11 @@ internal sealed class Command : CommandBase
                 bestMatch = helpResult;
         }
 
-        if (current < args.Params.Count && _namedCommands.TryGetValue(args.Params[current], out var subs))
+        if (current < args.Params.Count && _namedCommands.TryGetValue(args.Params[current], out List<CommandBase>? subs))
         {
-            foreach (var sub in subs)
+            foreach (CommandBase sub in subs)
             {
-                var res = await sub.TryParseAsync(args, current + 1, commandName);
+                ParseResult res = await sub.TryParseAsync(args, current + 1, commandName);
                 if (res.Unmatched == 0)
                     return res;
 
@@ -90,9 +89,9 @@ internal sealed class Command : CommandBase
             }
         }
 
-        foreach (var sub in _mainCommands)
+        foreach (CommandBase sub in _mainCommands)
         {
-            var res = await sub.TryParseAsync(args, current, commandName);
+            ParseResult res = await sub.TryParseAsync(args, current, commandName);
             if (res.Unmatched == 0)
                 return res;
 
@@ -111,13 +110,13 @@ internal sealed class Command : CommandBase
 
     private async Task<ParseResult> TryParseHelpAsync(CommandArgs args, int current, string commandName)
     {
-        var bestMatch = CreateResult(args.Params.Count - current + 1);
+        ParseResult bestMatch = CreateResult(args.Params.Count - current + 1);
 
-        if (_namedCommands.TryGetValue("help", out var helpSubs))
+        if (_namedCommands.TryGetValue("help", out List<CommandBase>? helpSubs))
         {
-            foreach (var sub in helpSubs)
+            foreach (CommandBase sub in helpSubs)
             {
-                var res = await sub.TryParseAsync(args, current + 1, commandName);
+                ParseResult res = await sub.TryParseAsync(args, current + 1, commandName);
                 if (res.Unmatched == 0)
                     return res;
 
@@ -126,11 +125,11 @@ internal sealed class Command : CommandBase
             }
         }
 
-        foreach (var sub in _mainCommands)
+        foreach (CommandBase sub in _mainCommands)
         {
             if (sub is HelpCommand)
             {
-                var res = await sub.TryParseAsync(args, current, commandName);
+                ParseResult res = await sub.TryParseAsync(args, current, commandName);
                 if (res.Unmatched == 0)
                     return res;
 
@@ -144,7 +143,7 @@ internal sealed class Command : CommandBase
 
     private async Task ShowSubCommandsHint(CommandArgs args, string commandName)
     {
-        var message = ErrorMessageBuilder.BuildIncompleteCommandHint(this, args, commandName);
+        string message = ErrorMessageBuilder.BuildIncompleteCommandHint(this, args, commandName);
         await args.ReplyAsync(message);
     }
 
@@ -161,26 +160,26 @@ internal sealed class Command : CommandBase
 
     public IEnumerable<(string Path, CommandBase Command)> GetAllCommandsWithPath(string parentPath)
     {
-        foreach (var (cmdName, subs) in _namedCommands)
+        foreach ((string? cmdName, List<CommandBase>? subs) in _namedCommands)
         {
-            var currentPath = string.IsNullOrEmpty(parentPath) ? cmdName : $"{parentPath} {cmdName}";
-            foreach (var sub in subs)
+            string currentPath = string.IsNullOrEmpty(parentPath) ? cmdName : $"{parentPath} {cmdName}";
+            foreach (CommandBase sub in subs)
             {
                 yield return (currentPath, sub);
                 if (sub is Command cmd)
                 {
-                    foreach (var nested in cmd.GetAllCommandsWithPath(currentPath))
+                    foreach ((string Path, CommandBase Command) nested in cmd.GetAllCommandsWithPath(currentPath))
                         yield return nested;
                 }
             }
         }
 
-        foreach (var sub in _mainCommands.Where(sub => sub is not HelpCommand))
+        foreach (CommandBase? sub in _mainCommands.Where(sub => sub is not HelpCommand))
         {
             yield return (parentPath, sub);
             if (sub is Command cmd)
             {
-                foreach (var nested in cmd.GetAllCommandsWithPath(parentPath))
+                foreach ((string Path, CommandBase Command) nested in cmd.GetAllCommandsWithPath(parentPath))
                     yield return nested;
             }
         }
@@ -199,12 +198,12 @@ internal sealed class Command : CommandBase
 
         public override async Task<ParseResult> TryParseAsync(CommandArgs args, int current, string commandName)
         {
-            if (!ValidateHelpCommand(args, current, out var errorResult))
+            if (!ValidateHelpCommand(args, current, out ParseResult errorResult))
                 return errorResult;
 
-            var targetCommand = FindTargetCommand(args, current);
-            var commandPath = BuildCommandPath(args, current);
-            var helpText = BuildHelpText(targetCommand ?? _rootCommand, commandPath);
+            Command? targetCommand = FindTargetCommand(args, current);
+            string commandPath = BuildCommandPath(args, current);
+            string helpText = BuildHelpText(targetCommand ?? _rootCommand, commandPath);
 
             await args.ReplyAsync(helpText);
             return CreateResult(0);
@@ -231,7 +230,7 @@ internal sealed class Command : CommandBase
 
         private static string BuildCommandPath(CommandArgs args, int current)
         {
-            var path = args.CommandPrefix + args.CommandName;
+            string path = args.CommandPrefix + args.CommandName;
 
             for (int i = 0; i < current; i++)
                 path += " " + args.Params[i];
@@ -243,11 +242,11 @@ internal sealed class Command : CommandBase
         {
             if (current == 0) return null;
 
-            var target = _rootCommand;
+            Command? target = _rootCommand;
             for (int i = 0; i < current && target != null; i++)
             {
-                var cmdName = args.Params[i];
-                var sub = target.GetNamedCommands()
+                string cmdName = args.Params[i];
+                CommandBase? sub = target.GetNamedCommands()
                     .Where(kv => kv.Key.Equals(cmdName, StringComparison.OrdinalIgnoreCase))
                     .SelectMany(kv => kv.Value)
                     .FirstOrDefault();

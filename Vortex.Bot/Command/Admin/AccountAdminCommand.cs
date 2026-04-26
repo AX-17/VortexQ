@@ -1,4 +1,4 @@
-using Lagrange.Core.Message.Entities;
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
 
@@ -78,7 +78,7 @@ public static class AccountAdminCommand
         [Main]
         public static async Task Execute(CommandArgs args)
         {
-            var accounts = Account.GetAll();
+            List<Account> accounts = Account.GetAll();
 
             if (accounts.Count == 0)
             {
@@ -86,9 +86,9 @@ public static class AccountAdminCommand
                 return;
             }
 
-            var sb = new System.Text.StringBuilder();
+            StringBuilder sb = new System.Text.StringBuilder();
             sb.AppendLine("账户列表:");
-            foreach (var account in accounts)
+            foreach (Account account in accounts)
             {
                 sb.AppendLine($"{account.UserId} -> {account.GroupName}");
             }

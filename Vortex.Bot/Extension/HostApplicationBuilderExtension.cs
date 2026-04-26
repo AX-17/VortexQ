@@ -42,9 +42,9 @@ public static class HostApplicationBuilderExtension
             // BotConfig
             .AddSingleton(services =>
             {
-                var loggerConfiguration = services.GetRequiredService<IOptions<LoggerFilterOptions>>().Value;
-                var coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
-                var signer = services.GetRequiredService<Signer>();
+                LoggerFilterOptions loggerConfiguration = services.GetRequiredService<IOptions<LoggerFilterOptions>>().Value;
+                CoreConfiguration coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+                Signer signer = services.GetRequiredService<Signer>();
 
                 return new BotConfig
                 {
@@ -60,13 +60,13 @@ public static class HostApplicationBuilderExtension
             // BotKeystore
             .AddSingleton(services =>
             {
-                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+                CoreConfiguration configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
                 string path = $"{configuration.Login.Uin}.keystore";
 
                 BotKeystore keystore;
                 if (File.Exists(path))
                 {
-                    var keystoreNullable = JsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
+                    BotKeystore? keystoreNullable = JsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
                     keystore = keystoreNullable ?? throw new Exception(
                         $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
                     );
@@ -82,8 +82,8 @@ public static class HostApplicationBuilderExtension
             // BotContext
             .AddSingleton(services =>
             {
-                var config = services.GetRequiredService<BotConfig>();
-                var keystore = services.GetRequiredService<BotKeystore>();
+                BotConfig config = services.GetRequiredService<BotConfig>();
+                BotKeystore keystore = services.GetRequiredService<BotKeystore>();
 
                 return BotFactory.Create(config, keystore);
             })
@@ -91,7 +91,7 @@ public static class HostApplicationBuilderExtension
             // CaptchaResolver
             .AddSingleton<ICaptchaResolver>(services =>
             {
-                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+                CoreConfiguration configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
 
                 return configuration.Login.UseOnlineCaptchaResolver
                     ? ActivatorUtilities.CreateInstance<OnlineCaptchaResolver>(services)
@@ -102,8 +102,8 @@ public static class HostApplicationBuilderExtension
             // Database
             .AddSingleton<IDatabaseService>(services =>
             {
-                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
-                var dbPath = Path.Combine(Environment.CurrentDirectory, configuration.Database.DbPath);
+                CoreConfiguration configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+                string dbPath = Path.Combine(Environment.CurrentDirectory, configuration.Database.DbPath);
                 return new DatabaseService(dbPath);
             })
 
@@ -131,8 +131,8 @@ public static class HostApplicationBuilderExtension
             .AddSingleton<VortexSocketService>()
             .AddHostedService(services =>
             {
-                var server = services.GetRequiredService<VortexSocketService>();
-                var context = services.GetRequiredService<VortexContext>();
+                VortexSocketService server = services.GetRequiredService<VortexSocketService>();
+                VortexContext context = services.GetRequiredService<VortexContext>();
                 context.Server = server;
                 return server;
             })

@@ -49,7 +49,7 @@ public class OnlineBuilder
 
     public OnlineBuilder Add(string tileName, params OnlineCell[] cells)
     {
-        var content = new OnlineContent()
+        OnlineContent content = new OnlineContent()
         {
             Title = tileName,
             OnlineCells = [.. cells]
@@ -163,18 +163,18 @@ public class OnlineGenerate
 
     public (int Width, List<int> Heights) ComputeLayout(OnlineBuilder builder)
     {
-        var family = ImageUtility.GetFontFamily();
-        var font = family.CreateFont(FontSize);
-        var titleFont = family.CreateFont(TitleFontSize);
+        FontFamily family = ImageUtility.GetFontFamily();
+        Font font = family.CreateFont(FontSize);
+        Font titleFont = family.CreateFont(TitleFontSize);
 
-        var titleSize = TextMeasurer.MeasureSize("测", new TextOptions(titleFont));
+        FontRectangle titleSize = TextMeasurer.MeasureSize("测", new TextOptions(titleFont));
 
         // 计算宽度
-        var width = (CardMargin * 2 + CardDrawPadding * 2 + LineMax * AvatarSize + (LineMax - 1) * Spacing);
+        var width = (CardMargin * 2) + (CardDrawPadding * 2) + (LineMax * AvatarSize) + ((LineMax - 1) * Spacing);
 
         // 计算每个OnlineContent的高度
-        var heights = new List<int>();
-        foreach (var content in builder.Contents)
+        List<int> heights = new List<int>();
+        foreach (OnlineContent content in builder.Contents)
         {
             var height = TilePadding + (int)titleSize.Height;
 
@@ -186,9 +186,9 @@ public class OnlineGenerate
             else
             {
                 int cellCount = 0;
-                foreach (var cell in content.OnlineCells)
+                foreach (OnlineCell cell in content.OnlineCells)
                 {
-                    var textSize = TextMeasurer.MeasureSize(cell.Text, new TextOptions(font)
+                    FontRectangle textSize = TextMeasurer.MeasureSize(cell.Text, new TextOptions(font)
                     {
                         WrappingLength = AvatarSize,
                         WordBreaking = WordBreaking.BreakAll
@@ -219,64 +219,64 @@ public class OnlineGenerate
 
     public byte[] DrawContent(OnlineBuilder builder)
     {
-        using var background = Image.Load<Rgba32>(BackgroundPath);
-        var (width, heights) = ComputeLayout(builder);
+        using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
+        (int width, List<int>? heights) = ComputeLayout(builder);
 
         // 计算总高度
         var totalHeight = CardTopPadding + CardBottomPadding + heights.Sum();
 
-        using var image = background.Crop(width, totalHeight);
+        using Image<Rgba32> image = background.Crop(width, totalHeight);
 
-        var family = ImageUtility.GetFontFamily();
-        var font = family.CreateFont(FontSize);
-        var titleFont = family.CreateFont(TitleFontSize);
+        FontFamily family = ImageUtility.GetFontFamily();
+        Font font = family.CreateFont(FontSize);
+        Font titleFont = family.CreateFont(TitleFontSize);
 
         image.Mutate(ctx =>
         {
             float yOffset = CardTopPadding;
             for (int i = 0; i < builder.Contents.Count; i++)
             {
-                var content = builder.Contents[i];
+                OnlineContent content = builder.Contents[i];
                 var contentHeight = heights[i];
 
                 // 绘制新的卡片背景
-                ctx.DrawRoundedRectangle(CardMargin, yOffset, width - CardMargin * 2, contentHeight, 60, Color.FromRgba(255, 255, 255, 230));
+                ctx.DrawRoundedRectangle(CardMargin, yOffset, width - (CardMargin * 2), contentHeight, 60, Color.FromRgba(255, 255, 255, 230));
 
                 yOffset += TilePadding;
 
                 // 计算标题宽度并居中绘制
-                var titleSize = TextMeasurer.MeasureSize(content.Title, new TextOptions(titleFont));
+                FontRectangle titleSize = TextMeasurer.MeasureSize(content.Title, new TextOptions(titleFont));
                 float titleX = (width - titleSize.Width) / 2;
                 ctx.DrawText(content.Title, titleFont, Color.Black, new PointF(titleX, yOffset));
                 yOffset += titleFont.Size + TilePadding;
 
                 int cellCount = 0;
-                foreach (var cell in content.OnlineCells)
+                foreach (OnlineCell cell in content.OnlineCells)
                 {
                     // 计算头像位置
                     int row = cellCount / LineMax;
                     int col = cellCount % LineMax;
                     int centerX = width / 2;
-                    int x = centerX + (col % 2 == 0 ? 1 : -1) * ((col + 1) / 2) * (AvatarSize + Spacing);
+                    int x = centerX + ((col % 2 == 0 ? 1 : -1) * ((col + 1) / 2) * (AvatarSize + Spacing));
                     if (content.OnlineCells.Count == 1)
                     {
-                        x = centerX - AvatarSize / 2;
+                        x = centerX - (AvatarSize / 2);
                     }
-                    int y = (int)(yOffset + row * (AvatarSize + Spacing + font.Size));
+                    int y = (int)(yOffset + (row * (AvatarSize + Spacing + font.Size)));
 
                     // 绘制头像
-                    var avatar = ImageUtility.GetAvatar(cell.Uin, AvatarSize);
+                    Image<Rgba32> avatar = ImageUtility.GetAvatar(cell.Uin, AvatarSize);
                     ctx.DrawImage(avatar, new Point(x, y), 1);
 
                     // 计算文本位置并绘制
-                    var textColor = cell.UseColor ? cell.Color : Color.Black;
-                    var textOptions = new RichTextOptions(font)
+                    Color textColor = cell.UseColor ? cell.Color : Color.Black;
+                    RichTextOptions textOptions = new RichTextOptions(font)
                     {
                         WrappingLength = AvatarSize,
                         WordBreaking = WordBreaking.BreakAll,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Top,
-                        Origin = new PointF(x + AvatarSize / 2, y + AvatarSize + AvatarPadding)
+                        Origin = new PointF(x + (AvatarSize / 2), y + AvatarSize + AvatarPadding)
                     };
 
                     ctx.DrawText(textOptions, cell.Text, textColor);

@@ -8,6 +8,6 @@ public class HeartBeatHandler : RoutedPushHandlerBase<HeartBeatPacket>
 {
     public override void Handle(HeartBeatPacket packet, PacketRouteContext context)
     {
-       
+
     }
 }

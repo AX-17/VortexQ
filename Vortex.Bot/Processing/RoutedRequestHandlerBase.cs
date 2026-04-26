@@ -36,13 +36,11 @@ public abstract class RoutedRequestHandlerBase<TRequest, TResponse>
 
     protected async Task<bool> SendToClientAsync(Guid clientId, INetPacket packet)
     {
-        if (Server == null) return false;
-        return await Server.SendToClientAsync(clientId, packet);
+        return Server == null ? false : await Server.SendToClientAsync(clientId, packet);
     }
 
     protected async Task<int> BroadcastAsync(INetPacket packet)
     {
-        if (Server == null) return 0;
-        return await Server.BroadcastAsync(packet);
+        return Server == null ? 0 : await Server.BroadcastAsync(packet);
     }
 }

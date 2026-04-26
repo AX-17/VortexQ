@@ -1,5 +1,5 @@
-using System.Reflection;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace Vortex.Bot.Plugins;
 

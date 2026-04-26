@@ -30,7 +30,7 @@ public class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, IOptio
             token.ThrowIfCancellationRequested();
 
             string queryUrl = string.Format(QueryUrl, _bot.BotUin);
-            var response = await _client.GetAsync(queryUrl, token);
+            HttpResponseMessage response = await _client.GetAsync(queryUrl, token);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 _logger.LogCaptchaWaiting();

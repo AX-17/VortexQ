@@ -1,5 +1,4 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Utility;
 using Vortex.Bot.Utility.Images;
 
@@ -27,7 +26,7 @@ public static class SystemInfoCommand
             .AddItem("网络上行", $"{monitor.NetworkUploadKbps:0.0} KB/s")
             .AddItem("网络下行", $"{monitor.NetworkDownloadKbps:0.0} KB/s");
 
-        var imageData = builder.Build();
+        byte[] imageData = builder.Build();
         await args.ReplyImageAsync(imageData);
     }
 }

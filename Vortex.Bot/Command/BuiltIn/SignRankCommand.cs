@@ -1,5 +1,4 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Command;
 using Vortex.Bot.Database.Models;
 using Vortex.Bot.Utility.Images;
 
@@ -17,18 +16,18 @@ public static class SignRankCommand
     {
         try
         {
-            var signs = Sign.GetAll()
+            List<Sign> signs = Sign.GetAll()
                 .OrderByDescending(x => x.Date)
                 .Take(10)
                 .ToList();
-            
-            var builder = TableBuilder.Create()
+
+            TableBuilder builder = TableBuilder.Create()
                 .SetHeader("排名", "账号", "累计天数")
                 .SetTitle("签到排行")
                 .SetMemberUin((uint)args.SenderUin);
-            
+
             int i = 1;
-            foreach (var sign in signs)
+            foreach (Sign sign in signs)
             {
                 builder.AddRow(i.ToString(), sign.UserId.ToString(), sign.Date.ToString());
                 i++;

@@ -7,7 +7,7 @@ public class QrCodeUtility
 {
     public static string GenerateAscii(string payload, bool compatible)
     {
-        var qrcode = QrCode.EncodeText(payload, QrCode.Ecc.Low);
+        QrCode qrcode = QrCode.EncodeText(payload, QrCode.Ecc.Low);
         StringBuilder result = new();
         for (int y = 0; y < qrcode.Size; y += 2)
         {

@@ -20,11 +20,8 @@ public static class RecordBase
     /// </summary>
     public static IDataContext<T> GetContext<T>(string tableName) where T : class, new()
     {
-        if (string.IsNullOrEmpty(_connectionString))
-        {
-            throw new InvalidOperationException("数据库连接未初始化，请先调用 RecordBase.Initialize()");
-        }
-
-        return new DataContext<T>(tableName, _connectionString);
+        return string.IsNullOrEmpty(_connectionString)
+            ? throw new InvalidOperationException("数据库连接未初始化，请先调用 RecordBase.Initialize()")
+            : (IDataContext<T>)new DataContext<T>(tableName, _connectionString);
     }
 }

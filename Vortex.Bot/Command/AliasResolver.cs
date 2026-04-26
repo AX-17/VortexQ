@@ -7,17 +7,17 @@ internal static class AliasResolver
 {
     public static IEnumerable<string> GetAliases(MemberInfo member)
     {
-        var commandAttr = member.GetCustomAttribute<CommandAttribute>();
+        CommandAttribute? commandAttr = member.GetCustomAttribute<CommandAttribute>();
         if (commandAttr != null && commandAttr.Alias.Count > 0)
         {
-            foreach (var alias in commandAttr.Alias)
+            foreach (string alias in commandAttr.Alias)
                 yield return alias;
             yield break;
         }
 
-        var aliasAttrs = member.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
-        var hasAlias = false;
-        foreach (var alias in aliasAttrs)
+        IEnumerable<string> aliasAttrs = member.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
+        bool hasAlias = false;
+        foreach (string alias in aliasAttrs)
         {
             hasAlias = true;
             yield return alias;
@@ -31,18 +31,18 @@ internal static class AliasResolver
 
     public static IEnumerable<string> GetAllAliases(MemberInfo member)
     {
-        var commandAliases = member.GetCustomAttributes<CommandAttribute>().SelectMany(a => a.Alias);
-        var aliasAttrs = member.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
+        IEnumerable<string> commandAliases = member.GetCustomAttributes<CommandAttribute>().SelectMany(a => a.Alias);
+        IEnumerable<string> aliasAttrs = member.GetCustomAttributes<AliasAttribute>().SelectMany(a => a.Alias);
 
-        var found = false;
+        bool found = false;
 
-        foreach (var alias in commandAliases)
+        foreach (string alias in commandAliases)
         {
             found = true;
             yield return alias;
         }
 
-        foreach (var alias in aliasAttrs)
+        foreach (string alias in aliasAttrs)
         {
             found = true;
             yield return alias;

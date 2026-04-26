@@ -1,6 +1,5 @@
 using LinqToDB;
 using LinqToDB.Mapping;
-using Vortex.Bot.Database;
 
 namespace Vortex.Bot.Database.Models;
 
@@ -59,14 +58,14 @@ public class MessageRecord
     /// </summary>
     public static void Insert(MessageRecord record)
     {
-        var context = RecordBase.GetContext<MessageRecord>("MessageRecord");
+        IDataContext<MessageRecord> context = RecordBase.GetContext<MessageRecord>("MessageRecord");
 
         // 清理旧记录（保留最近1000条）
-        var count = context.Records.Count();
+        int count = context.Records.Count();
         if (count > 1000)
         {
             var toDelete = context.Records.OrderBy(x => x.Id).Take(100).ToList();
-            foreach (var item in toDelete)
+            foreach (MessageRecord? item in toDelete)
             {
                 context.Delete(x => x.Id == item.Id);
             }
@@ -96,9 +95,9 @@ public class MessageRecord
     /// </summary>
     public static void Clear()
     {
-        var context = RecordBase.GetContext<MessageRecord>("MessageRecord");
+        IDataContext<MessageRecord> context = RecordBase.GetContext<MessageRecord>("MessageRecord");
         var all = context.Records.ToList();
-        foreach (var item in all)
+        foreach (MessageRecord? item in all)
         {
             context.Delete(x => x.Id == item.Id);
         }

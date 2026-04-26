@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Utility.Images;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -14,14 +15,14 @@ public static class ServerListCommand
     [Main]
     public static async Task ShowServerList(GroupCommandArgs args)
     {
-        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
             await args.ReplyAsync("服务器管理器未初始化");
             return;
         }
 
-        var servers = args.GroupUin > 0
+        List<TerrariaServer> servers = args.GroupUin > 0
             ? [.. serverManager.GetServersByGroup(args.GroupUin)]
             : serverManager.GetAllServers().ToList();
 
@@ -31,15 +32,15 @@ public static class ServerListCommand
             return;
         }
 
-        var tableBuilder = new TableBuilder()
+        TableBuilder tableBuilder = new TableBuilder()
             .SetHeader("服务器名称", "IP", "端口", "版本", "说明", "状态", "世界", "种子", "大小")
             .SetTitle("服务器列表")
             .SetMemberUin((uint)args.SenderUin);
 
-        foreach (var server in servers)
+        foreach (TerrariaServer? server in servers)
         {
-            var status = await server.GetStatusAsync();
-            var isOnline = status != null && status.Success;
+            ServerStatusPacketResponse? status = await server.GetStatusAsync();
+            bool isOnline = status != null && status.Success;
 
             tableBuilder.AddRow(
                 server.Config.Name,

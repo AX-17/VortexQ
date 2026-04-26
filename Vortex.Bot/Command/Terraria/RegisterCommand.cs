@@ -1,10 +1,12 @@
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 using Vortex.Bot.Attributes;
+using Vortex.Bot.Configuration;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database.Models;
 using Vortex.Bot.Utility;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -17,14 +19,14 @@ public static partial class RegisterCommand
     [Main]
     public static async Task Execute(GroupCommandArgs args, [Param("角色名称")] string characterName)
     {
-        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
             await args.ReplyAsync("服务器管理器未初始化");
             return;
         }
 
-        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
             await args.ReplyAsync("未切换服务器或服务器无效!\n请先使用 '切换 <服务器名称>' 选择服务器");
             return;
@@ -42,7 +44,7 @@ public static partial class RegisterCommand
             return;
         }
 
-        var existingUsers = TerrariaUser.GetUsersById(args.SenderUin, server.Config.Name);
+        List<TerrariaUser> existingUsers = TerrariaUser.GetUsersById(args.SenderUin, server.Config.Name);
         if (existingUsers.Count >= server.Config.RegisterMaxCount)
         {
             await args.ReplyAsync($"同一个服务器上注册账户不能超过{server.Config.RegisterMaxCount}个");
@@ -54,7 +56,7 @@ public static partial class RegisterCommand
         try
         {
             TerrariaUser.Add(args.SenderUin, args.GroupUin, server.Config.Name, characterName, password);
-            var result = await server.RegisterAccountAsync(characterName, password, server.Config.DefaultGroup);
+            AccountRegistrationPacketResponse? result = await server.RegisterAccountAsync(characterName, password, server.Config.DefaultGroup);
 
             if (result?.Success == true)
             {
@@ -63,7 +65,7 @@ public static partial class RegisterCommand
                     await SendRegistrationEmail(args, server.Config.Name, characterName, password);
                 }
 
-                var reply = $"注册成功!\n" +
+                string reply = $"注册成功!\n" +
                            $"注册服务器: {server.Config.Name}\n" +
                            $"注册名称: {characterName}\n" +
                            $"注册账号: {args.SenderUin}\n" +
@@ -87,9 +89,9 @@ public static partial class RegisterCommand
     {
         try
         {
-            var mailConfig = args.Context.Configuration.Mail;
+            MailConfiguration mailConfig = args.Context.Configuration.Mail;
 
-            var emailBody = MailTemplateUtility.RenderTemplate("RegisterEmail", new RegisterEmailModel
+            string emailBody = MailTemplateUtility.RenderTemplate("RegisterEmail", new RegisterEmailModel
             {
                 ServerName = serverName,
                 CharacterName = characterName,
@@ -99,7 +101,7 @@ public static partial class RegisterCommand
 
             await Task.Run(() =>
             {
-                using var mail = MailUtility.Builder(mailConfig.Host, mailConfig.Password)
+                using MailUtility mail = MailUtility.Builder(mailConfig.Host, mailConfig.Port, mailConfig.Password, mailConfig.EnableSsl)
                     .SetSender(mailConfig.From)
                     .AddTarget($"{args.SenderUin}@qq.com")
                     .SetTile($"[{serverName}] Terraria 服务器注册成功")
@@ -111,7 +113,7 @@ public static partial class RegisterCommand
         }
         catch (Exception ex)
         {
-            args.Logger.LogWarning("发送注册邮件失败: {Error}", ex.Message);
+            args.Logger.LogWarning("发送注册邮件失败: {Error}", ex.ToString());
         }
     }
 

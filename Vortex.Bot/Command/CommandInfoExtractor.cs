@@ -1,17 +1,10 @@
 namespace Vortex.Bot.Command;
 
-internal sealed class CommandInfoExtractor
+internal sealed class CommandInfoExtractor(Command rootCommand, string[] rootAliases, bool includeSubCommands)
 {
-    private readonly Command _rootCommand;
-    private readonly string[] _rootAliases;
-    private readonly bool _includeSubCommands;
-
-    public CommandInfoExtractor(Command rootCommand, string[] rootAliases, bool includeSubCommands)
-    {
-        _rootCommand = rootCommand;
-        _rootAliases = rootAliases;
-        _includeSubCommands = includeSubCommands;
-    }
+    private readonly Command _rootCommand = rootCommand;
+    private readonly string[] _rootAliases = rootAliases;
+    private readonly bool _includeSubCommands = includeSubCommands;
 
     public IEnumerable<CommandInfo> Extract()
     {
@@ -20,9 +13,9 @@ internal sealed class CommandInfoExtractor
 
     private IEnumerable<CommandInfo> ExtractFromCommand(Command command, string[] aliases, string parentPath)
     {
-        var currentPath = string.IsNullOrEmpty(parentPath) ? aliases[0] : parentPath;
+        string currentPath = string.IsNullOrEmpty(parentPath) ? aliases[0] : parentPath;
 
-        var mainExecutor = command.GetMainCommands()
+        CommandExecutor? mainExecutor = command.GetMainCommands()
             .OfType<CommandExecutor>()
             .FirstOrDefault();
 
@@ -34,7 +27,7 @@ internal sealed class CommandInfoExtractor
         if (!_includeSubCommands)
             yield break;
 
-        foreach (var info in ExtractSubCommands(command, currentPath))
+        foreach (CommandInfo info in ExtractSubCommands(command, currentPath))
         {
             yield return info;
         }
@@ -54,7 +47,7 @@ internal sealed class CommandInfoExtractor
 
         foreach (var item in groupedSubCommands)
         {
-            var subPath = $"{parentPath} {item.Aliases[0]}";
+            string subPath = $"{parentPath} {item.Aliases[0]}";
 
             if (item.Command is CommandExecutor executor)
             {
@@ -62,7 +55,7 @@ internal sealed class CommandInfoExtractor
             }
             else if (item.Command is Command subCmd)
             {
-                foreach (var info in ExtractFromCommand(subCmd, item.Aliases, subPath))
+                foreach (CommandInfo info in ExtractFromCommand(subCmd, item.Aliases, subPath))
                 {
                     yield return info;
                 }
@@ -72,7 +65,7 @@ internal sealed class CommandInfoExtractor
 
     private static CommandInfo CreateCommandInfo(string path, string[] aliases, Command? command, CommandExecutor executor)
     {
-        var helpText = command?.HelpText ?? executor.HelpText;
+        string? helpText = command?.HelpText ?? executor.HelpText;
         return new CommandInfo
         {
             Path = path,

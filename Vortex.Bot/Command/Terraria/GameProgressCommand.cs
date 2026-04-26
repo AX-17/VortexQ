@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -13,28 +15,28 @@ public static class GameProgressCommand
     [Main]
     public static async Task ShowGameProgress(GroupCommandArgs args)
     {
-        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
             await args.ReplyAsync("服务器管理器未初始化");
             return;
         }
 
-        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
             await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
-        var progress = await server.GetGameProgressAsync();
+        GameProgressPacketResponse? progress = await server.GetGameProgressAsync();
 
         if (progress?.Success == true && progress.Progress != null)
         {
-            var sb = new System.Text.StringBuilder();
+            StringBuilder sb = new System.Text.StringBuilder();
             sb.AppendLine($"[{server.Config.Name}] 游戏进度");
             sb.AppendLine();
 
-            foreach (var item in progress.Progress)
+            foreach (KeyValuePair<string, bool> item in progress.Progress)
             {
                 var status = item.Value ? "✅" : "❌";
                 sb.AppendLine($"{status} {item.Key}");

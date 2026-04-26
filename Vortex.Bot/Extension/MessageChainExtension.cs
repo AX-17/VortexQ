@@ -1,8 +1,5 @@
 ﻿using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Vortex.Bot.Extension;
 

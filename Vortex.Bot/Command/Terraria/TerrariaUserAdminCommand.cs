@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database.Models;
@@ -19,14 +20,14 @@ public static class TerrariaUserAdminCommand
         [Main]
         public static async Task Execute(GroupCommandArgs args, [Param("角色名称")] string characterName)
         {
-            var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+            TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
             if (serverManager == null)
             {
                 await args.ReplyAsync("服务器管理器未初始化");
                 return;
             }
 
-            if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
+            if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
             {
                 await args.ReplyAsync("未切换服务器或服务器无效!");
                 return;
@@ -52,20 +53,20 @@ public static class TerrariaUserAdminCommand
         [Main]
         public static async Task Execute(GroupCommandArgs args)
         {
-            var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+            TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
             if (serverManager == null)
             {
                 await args.ReplyAsync("服务器管理器未初始化");
                 return;
             }
 
-            if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
+            if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
             {
                 await args.ReplyAsync("未切换服务器或服务器无效!");
                 return;
             }
 
-            var users = TerrariaUser.GetUsersByServer(server.Config.Name);
+            List<TerrariaUser> users = TerrariaUser.GetUsersByServer(server.Config.Name);
 
             if (users.Count == 0)
             {
@@ -73,9 +74,9 @@ public static class TerrariaUserAdminCommand
                 return;
             }
 
-            var sb = new System.Text.StringBuilder();
+            StringBuilder sb = new System.Text.StringBuilder();
             sb.AppendLine($"[{server.Config.Name}] 用户列表:");
-            foreach (var user in users.Take(20))
+            foreach (TerrariaUser? user in users.Take(20))
             {
                 sb.AppendLine($"ID:{user.Id} 名称:{user.Name} 组ID:{user.GroupId}");
             }

@@ -14,7 +14,7 @@ internal class ImageUtility
     public static readonly ImageUtility Instance = new();
     private ImageUtility()
     {
-        var fc = new FontCollection();
+        FontCollection fc = new FontCollection();
         FontFamily = fc.Add("Resources/Font/simhei.ttf");
     }
 
@@ -25,8 +25,8 @@ internal class ImageUtility
 
     public static Image<Rgba32> GetAvatar(long uin, int size)
     {
-        var buffer = HttpUtility.GetByteAsync($"http://q.qlogo.cn/headimg_dl?dst_uin={uin}&spec=640&img_type=png").Result;
-        using var image = Image.Load<Rgba32>(buffer);
+        byte[] buffer = HttpUtility.GetByteAsync($"http://q.qlogo.cn/headimg_dl?dst_uin={uin}&spec=640&img_type=png").Result;
+        using Image<Rgba32> image = Image.Load<Rgba32>(buffer);
         var avatar = image.CutCircles(size);
         return avatar;
     }

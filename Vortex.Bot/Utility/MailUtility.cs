@@ -1,20 +1,25 @@
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 
 namespace Vortex.Bot.Utility;
 
-public class MailUtility(string Host, string Password) : IDisposable
+public class MailUtility(string Host, int Port, string Password, bool EnableSsl) : IDisposable
 {
     public string Host { get; } = Host;
 
+    public int Port { get; } = Port;
+
     public string Password { get; } = Password;
 
-    private readonly SmtpClient Client = new(Host);
+    public bool EnableSsl { get; } = EnableSsl;
+
+    private readonly SmtpClient Client = new(Host, Port);
 
     private readonly MailMessage Mail = new();
 
-    public static MailUtility Builder(string host, string password) => new(host, password);
+    public static MailUtility Builder(string host, int port, string password, bool enableSsl) => new(host, port, password, enableSsl);
 
     public MailUtility SetTile(string title)
     {
@@ -38,8 +43,8 @@ public class MailUtility(string Host, string Password) : IDisposable
 
     public MailUtility AddAttachment(string path)
     {
-        var attach = new Attachment(path);
-        var disposition = attach.ContentDisposition!;
+        Attachment attach = new Attachment(path);
+        ContentDisposition disposition = attach.ContentDisposition!;
         disposition.CreationDate = File.GetCreationTime(path);
         disposition.ModificationDate = File.GetLastWriteTime(path);
         disposition.ReadDate = File.GetLastAccessTime(path);
@@ -64,6 +69,7 @@ public class MailUtility(string Host, string Password) : IDisposable
         Client.DeliveryMethod = SmtpDeliveryMethod.Network;
         Mail.BodyEncoding = Encoding.UTF8;
         Client.UseDefaultCredentials = false;
+        Client.EnableSsl = EnableSsl;
         Client.Credentials = new NetworkCredential(Mail.From?.Address, Password);
         Client.Send(Mail);
         return this;

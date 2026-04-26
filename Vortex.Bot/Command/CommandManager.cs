@@ -1,6 +1,6 @@
-using System.Reflection;
 using Lagrange.Core.Events.EventArgs;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Configuration;
 using Vortex.Bot.Extension;
@@ -16,10 +16,10 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
 
     public void AutoRegister(Assembly assembly)
     {
-        var commandTypes = assembly.GetTypes()
+        IEnumerable<Type> commandTypes = assembly.GetTypes()
             .Where(static t => t.IsClass && !t.IsNested && t.GetCustomAttribute<CommandAttribute>() != null);
 
-        foreach (var type in commandTypes)
+        foreach (Type? type in commandTypes)
         {
             try
             {
@@ -34,14 +34,14 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
 
     public void Register(Type type)
     {
-        var (names, tree) = CommandHelper.Register(type);
-        var commandTypeAttr = type.GetCustomAttribute<CommandTypeAttribute>();
-        var commandTypes = commandTypeAttr?.CommandType ?? CommandType.Group;
+        (string[]? names, Command? tree) = CommandHelper.Register(type);
+        CommandTypeAttribute? commandTypeAttr = type.GetCustomAttribute<CommandTypeAttribute>();
+        CommandType commandTypes = commandTypeAttr?.CommandType ?? CommandType.Group;
 
-        foreach (var name in names)
+        foreach (string name in names)
         {
-            var key = name.ToLowerInvariant();
-            if (_commands.TryGetValue(key, out var existing))
+            string key = name.ToLowerInvariant();
+            if (_commands.TryGetValue(key, out CommandRegistration? existing))
             {
                 existing.Types |= commandTypes;
                 _logger.LogInformation("Extended command '{Command}' to type: {NewType} (now supports: {AllTypes})",
@@ -71,16 +71,16 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
     {
         if (context == null) return false;
 
-        var parameters = CommandUtility.ParseParameters(commandText);
+        List<string> parameters = CommandUtility.ParseParameters(commandText);
         if (parameters.Count == 0) return false;
 
-        if (!TryExtractCommandName(parameters, context.Configuration.Command, out var cmdName, out var argsParams))
+        if (!TryExtractCommandName(parameters, context.Configuration.Command, out string? cmdName, out List<string>? argsParams))
             return false;
 
-        if (!TryGetCommandRegistration(cmdName, CommandType.Server, out var registration))
+        if (!TryGetCommandRegistration(cmdName, CommandType.Server, out CommandRegistration? registration))
             return false;
 
-        var args = CreateServerArgs(context, argsParams, player, sessionId, parameters, context.Configuration.Command);
+        ServerCommandArgs args = CreateServerArgs(context, argsParams, player, sessionId, parameters, context.Configuration.Command);
 
         if (await TriggerCommandExecuting(args, cmdName))
             return true;
@@ -97,16 +97,16 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
         VortexContext context)
         where TArgs : CommandArgs
     {
-        var parameters = CommandUtility.ParseParameters(commandText);
+        List<string> parameters = CommandUtility.ParseParameters(commandText);
         if (parameters.Count == 0) return false;
 
-        if (!TryExtractCommandName(parameters, context.Configuration.Command, out var cmdName, out var argsParams))
+        if (!TryExtractCommandName(parameters, context.Configuration.Command, out string? cmdName, out List<string>? argsParams))
             return false;
 
-        if (!TryGetCommandRegistration(cmdName, requiredType, out var registration))
+        if (!TryGetCommandRegistration(cmdName, requiredType, out CommandRegistration? registration))
             return false;
 
-        var args = argsFactory(argsParams, messageEvent);
+        TArgs args = argsFactory(argsParams, messageEvent);
         args.CommandName = parameters[0];
         args.CommandPrefix = context.Configuration.Command.EnablePrefix ? context.Configuration.Command.Prefix : string.Empty;
 
@@ -119,25 +119,23 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
 
     public bool HasCommand(string name, CommandType? commandType = null)
     {
-        if (!_commands.TryGetValue(name.ToLowerInvariant(), out var registration))
-            return false;
-
-        return commandType == null || registration.Types.Supports(commandType.Value);
+        return !_commands.TryGetValue(name.ToLowerInvariant(), out CommandRegistration? registration)
+            ? false
+            : commandType == null || registration.Types.Supports(commandType.Value);
     }
 
     public IEnumerable<string> GetAllCommands(CommandType? commandType = null)
     {
-        if (commandType == null)
-            return _commands.Keys;
-
-        return _commands
+        return commandType == null
+            ? _commands.Keys
+            : _commands
             .Where(kv => kv.Value.Types.Supports(commandType.Value))
             .Select(kv => kv.Key);
     }
 
     public CommandType? GetCommandTypes(string name)
     {
-        return _commands.TryGetValue(name.ToLowerInvariant(), out var registration)
+        return _commands.TryGetValue(name.ToLowerInvariant(), out CommandRegistration? registration)
             ? registration.Types
             : null;
     }
@@ -146,7 +144,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
     {
         var processedTrees = new HashSet<Command>();
 
-        foreach (var (_, registration) in _commands)
+        foreach ((string _, CommandRegistration? registration) in _commands)
         {
             if (commandType != null && !registration.Types.Supports(commandType.Value))
                 continue;
@@ -155,7 +153,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
                 continue;
 
             var extractor = new CommandInfoExtractor(registration.Tree, registration.Aliases, includeSubCommands);
-            foreach (var info in extractor.Extract())
+            foreach (CommandInfo info in extractor.Extract())
             {
                 yield return info;
             }
@@ -190,7 +188,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
     {
         registration = null!;
 
-        if (!_commands.TryGetValue(cmdName, out var reg))
+        if (!_commands.TryGetValue(cmdName, out CommandRegistration? reg))
         {
             _logger.LogDebug("Command not found: {Command}", cmdName);
             return false;

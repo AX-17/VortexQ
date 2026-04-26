@@ -12,14 +12,14 @@ public class PlayerLeaveHandler : RoutedPushHandlerBase<PlayerLeavePacket>
 {
     public override void Handle(PlayerLeavePacket packet, PacketRouteContext context)
     {
-        var servers = Context?.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? servers = Context?.Server?.Services.GetService<TerrariaServerService>();
         if (servers == null) return;
-        var message = new MessageBuilder()
+        MessageChain message = new MessageBuilder()
         .Text($"玩家 {packet.Player.Name}: 离开服务器...")
         .Build();
-        foreach (var server in servers.GetAllServers())
+        foreach (TerrariaServer server in servers.GetAllServers())
         {
-            foreach (var groupid in server.Config.Groups)
+            foreach (long groupid in server.Config.Groups)
             {
                 Context?.BotContext.SendGroupMessage(groupid, message);
             }

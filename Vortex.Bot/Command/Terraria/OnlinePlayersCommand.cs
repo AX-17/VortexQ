@@ -1,9 +1,8 @@
-using System.Text;
-using Lagrange.Core.Message;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
-using Vortex.Bot.Extension;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -16,15 +15,15 @@ public static class OnlinePlayersCommand
     [Main]
     public static async Task ShowOnlinePlayers(GroupCommandArgs args)
     {
-        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
             await args.ReplyAsync("服务器管理器未初始化");
             return;
         }
 
-        var groupId = args.GroupUin;
-        var servers = groupId > 0
+        long groupId = args.GroupUin;
+        List<TerrariaServer> servers = groupId > 0
             ? [.. serverManager.GetServersByGroup(groupId)]
             : serverManager.GetAllServers().ToList();
 
@@ -35,11 +34,11 @@ public static class OnlinePlayersCommand
         }
 
         var sb = new StringBuilder();
-        foreach (var server in servers)
+        foreach (TerrariaServer? server in servers)
         {
-            var online = await server.GetOnlinePlayersAsync();
-            var playerCount = online?.Players?.Count ?? 0;
-            var maxCount = online?.MaxCount ?? 0;
+            ServerOnlinePacketResponse? online = await server.GetOnlinePlayersAsync();
+            int playerCount = online?.Players?.Count ?? 0;
+            int maxCount = online?.MaxCount ?? 0;
 
             sb.AppendLine($"[{server.Config.Name}] 在线玩家 ({playerCount}/{maxCount})");
 

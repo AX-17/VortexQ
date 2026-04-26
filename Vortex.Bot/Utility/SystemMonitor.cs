@@ -57,9 +57,9 @@ public sealed class SystemMonitor : IDisposable
 
     private void UpdateCpuUsage()
     {
-        var current = GetCpuData();
-        var totalDiff = current.TotalTime - _prevCpuData.TotalTime;
-        var idleDiff = current.IdleTime - _prevCpuData.IdleTime;
+        CpuUsageData current = GetCpuData();
+        ulong totalDiff = current.TotalTime - _prevCpuData.TotalTime;
+        ulong idleDiff = current.IdleTime - _prevCpuData.IdleTime;
 
         if (totalDiff > 0 && idleDiff <= totalDiff)
         {
@@ -72,9 +72,9 @@ public sealed class SystemMonitor : IDisposable
     private CpuUsageData GetCpuData()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return GetWindowsCpuData();
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return GetLinuxCpuData();
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return GetMacCpuData();
-        throw new PlatformNotSupportedException();
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? GetLinuxCpuData()
+            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? GetMacCpuData() : throw new PlatformNotSupportedException();
     }
 
     // Windows实现
@@ -86,7 +86,7 @@ public sealed class SystemMonitor : IDisposable
 
     private static CpuUsageData GetWindowsCpuData()
     {
-        GetSystemTimes(out var idle, out var kernel, out var user);
+        GetSystemTimes(out FILETIME idle, out FILETIME kernel, out FILETIME user);
         return new CpuUsageData
         {
             IdleTime = ((ulong)idle.dwHighDateTime << 32) | idle.dwLowDateTime,
@@ -98,8 +98,8 @@ public sealed class SystemMonitor : IDisposable
     // Linux实现
     private static CpuUsageData GetLinuxCpuData()
     {
-        var lines = File.ReadAllLines("/proc/stat");
-        var values = lines.First(l => l.StartsWith("cpu ")).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = File.ReadAllLines("/proc/stat");
+        string[] values = lines.First(l => l.StartsWith("cpu ")).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         return new CpuUsageData
         {
             TotalTime = values.Skip(1).Take(3).Select(ulong.Parse).Aggregate((a, b) => a + b),
@@ -114,13 +114,13 @@ public sealed class SystemMonitor : IDisposable
     private static CpuUsageData GetMacCpuData()
     {
         const string name = "kern.cp_time";
-        var size = (uint)Marshal.SizeOf<CpuUsageData>();
-        var ptr = Marshal.AllocHGlobal((int)size);
+        uint size = (uint)Marshal.SizeOf<CpuUsageData>();
+        nint ptr = Marshal.AllocHGlobal((int)size);
         try
         {
-            if (sysctlbyname(name, ptr, ref size, IntPtr.Zero, 0) == 0)
-                return Marshal.PtrToStructure<CpuUsageData>(ptr);
-            throw new Win32Exception();
+            return sysctlbyname(name, ptr, ref size, IntPtr.Zero, 0) == 0
+                ? Marshal.PtrToStructure<CpuUsageData>(ptr)
+                : throw new Win32Exception();
         }
         finally { Marshal.FreeHGlobal(ptr); }
     }
@@ -187,7 +187,7 @@ public sealed class SystemMonitor : IDisposable
     {
         try
         {
-            var lines = File.ReadAllLines("/proc/meminfo");
+            string[] lines = File.ReadAllLines("/proc/meminfo");
             TotalPhysicalMemory = GetMemValue(lines, "MemTotal") * 1024;
             AvailablePhysicalMemory = GetMemValue(lines, "MemAvailable") * 1024;
         }
@@ -198,8 +198,8 @@ public sealed class SystemMonitor : IDisposable
     {
         try
         {
-            var lines = File.ReadAllLines("/proc/meminfo");
-            var memAvailable = lines.FirstOrDefault(l => l.StartsWith("MemAvailable"));
+            string[] lines = File.ReadAllLines("/proc/meminfo");
+            string? memAvailable = lines.FirstOrDefault(l => l.StartsWith("MemAvailable"));
             if (memAvailable != null)
             {
                 AvailablePhysicalMemory = GetMemValue(lines, "MemAvailable") * 1024;
@@ -224,7 +224,7 @@ public sealed class SystemMonitor : IDisposable
         try
         {
             // 获取总内存
-            IntPtr len = (IntPtr)sizeof(long);
+            IntPtr len = sizeof(long);
             if (sysctlbyname("hw.memsize", out long total, ref len, IntPtr.Zero, 0) == 0)
                 TotalPhysicalMemory = total;
 
@@ -240,15 +240,15 @@ public sealed class SystemMonitor : IDisposable
         {
             var psi = new ProcessStartInfo("vm_stat") { RedirectStandardOutput = true };
             using var process = Process.Start(psi);
-            var output = process?.StandardOutput.ReadToEnd();
+            string? output = process?.StandardOutput.ReadToEnd();
             process?.WaitForExit();
 
             if (string.IsNullOrEmpty(output)) return;
 
-            var lines = output.Split('\n');
-            var free = GetMacMemValue(lines, "Pages free");
-            var speculative = GetMacMemValue(lines, "Pages speculative");
-            var pageSize = GetPageSize();
+            string[] lines = output.Split('\n');
+            long free = GetMacMemValue(lines, "Pages free");
+            long speculative = GetMacMemValue(lines, "Pages speculative");
+            long pageSize = GetPageSize();
             AvailablePhysicalMemory = (free + speculative) * pageSize;
         }
         catch (Exception ex) { Debug.WriteLine($"[macOS内存更新错误] {ex.Message}"); }
@@ -256,30 +256,28 @@ public sealed class SystemMonitor : IDisposable
 
     private static long GetMemValue(string[] lines, string key)
     {
-        var line = lines.FirstOrDefault(l => l.StartsWith(key));
+        string? line = lines.FirstOrDefault(l => l.StartsWith(key));
         if (line == null) return 0;
 
-        var parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2) return 0;
-
-        return long.TryParse(parts[1], out var value) ? value : 0;
+        string[] parts = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length < 2 ? 0 : long.TryParse(parts[1], out long value) ? value : 0;
     }
 
     private static long GetMacMemValue(string[] lines, string key)
     {
-        var line = lines.FirstOrDefault(l => l.Contains(key));
+        string? line = lines.FirstOrDefault(l => l.Contains(key));
         if (line == null) return 0;
 
-        var parts = line.Split(':');
+        string[] parts = line.Split(':');
         if (parts.Length < 2) return 0;
 
-        var valueStr = parts[1].Trim().Split('.')[0];
-        return long.TryParse(valueStr, out var value) ? value : 0;
+        string valueStr = parts[1].Trim().Split('.')[0];
+        return long.TryParse(valueStr, out long value) ? value : 0;
     }
 
     private static long GetPageSize()
     {
-        IntPtr len = (IntPtr)sizeof(long);
+        IntPtr len = sizeof(long);
         _ = sysctlbyname("hw.pagesize", out long size, ref len, IntPtr.Zero, 0);
         return size;
     }
@@ -292,7 +290,7 @@ public sealed class SystemMonitor : IDisposable
     {
         try
         {
-            var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+            IEnumerable<NetworkInterface> interfaces = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(n => n.OperationalStatus == OperationalStatus.Up)
                 .Where(n => !n.Description.Contains("Virtual"))
                 .Where(n => !n.Description.Contains("Pseudo"))
@@ -304,8 +302,8 @@ public sealed class SystemMonitor : IDisposable
                 SentBytes = interfaces.Sum(n => n.GetIPStatistics().BytesSent)
             };
 
-            var timestamp = Stopwatch.GetTimestamp();
-            var elapsed = (timestamp - _prevNetworkTimestamp) / (double)Stopwatch.Frequency;
+            long timestamp = Stopwatch.GetTimestamp();
+            double elapsed = (timestamp - _prevNetworkTimestamp) / (double)Stopwatch.Frequency;
 
             if (elapsed > 0.5 && _prevNetworkData.ReceivedBytes != 0)
             {

@@ -35,18 +35,14 @@ internal static class CommandParser
 
     public static ArgumentParser GetParser(Type type)
     {
-        if (Parsers.TryGetValue(type, out var parser))
-            return parser;
-
-        throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
+        return Parsers.TryGetValue(type, out ArgumentParser? parser)
+            ? parser
+            : throw new NotSupportedException($"Type {type.Name} is not supported as a command parameter");
     }
 
     public static string GetFriendlyName(Type type)
     {
-        if (FriendlyNames.TryGetValue(type, out var name))
-            return name;
-
-        return type.Name.ToLower();
+        return FriendlyNames.TryGetValue(type, out string? name) ? name : type.Name.ToLower();
     }
 
     public static bool IsSupportedType(Type type)
@@ -56,28 +52,28 @@ internal static class CommandParser
 
     private static bool TryParseBool(string arg, out object obj)
     {
-        var result = bool.TryParse(arg, out var t);
+        bool result = bool.TryParse(arg, out bool t);
         obj = t;
         return result;
     }
 
     private static bool TryParseUint(string arg, out object obj)
     {
-        var result = uint.TryParse(arg, out var t);
+        bool result = uint.TryParse(arg, out uint t);
         obj = t;
         return result;
     }
 
     private static bool TryParseInt(string arg, out object obj)
     {
-        var result = int.TryParse(arg, out var t);
+        bool result = int.TryParse(arg, out int t);
         obj = t;
         return result;
     }
 
     private static bool TryParseLong(string arg, out object obj)
     {
-        var result = long.TryParse(arg, out var t);
+        bool result = long.TryParse(arg, out long t);
         obj = t;
         return result;
     }
@@ -90,28 +86,28 @@ internal static class CommandParser
 
     private static bool TryParseDateTime(string arg, out object obj)
     {
-        var result = DateTime.TryParse(arg, CultureInfo.InvariantCulture, DateTimeStyles.None, out var t);
+        bool result = DateTime.TryParse(arg, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime t);
         obj = t;
         return result;
     }
 
     private static bool TryParseDouble(string arg, out object obj)
     {
-        var result = double.TryParse(arg, CultureInfo.InvariantCulture, out var t);
+        bool result = double.TryParse(arg, CultureInfo.InvariantCulture, out double t);
         obj = t;
         return result;
     }
 
     private static bool TryParseFloat(string arg, out object obj)
     {
-        var result = float.TryParse(arg, CultureInfo.InvariantCulture, out var t);
+        bool result = float.TryParse(arg, CultureInfo.InvariantCulture, out float t);
         obj = t;
         return result;
     }
 
     private static bool TryParseUlong(string arg, out object obj)
     {
-        var result = ulong.TryParse(arg, out var t);
+        bool result = ulong.TryParse(arg, out ulong t);
         obj = t;
         return result;
     }

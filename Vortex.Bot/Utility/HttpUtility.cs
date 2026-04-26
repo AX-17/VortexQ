@@ -1,6 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Specialized;
+using System.Text;
 using System.Text.Json;
-using System.Web;
 
 namespace Vortex.Bot.Utility;
 
@@ -15,9 +15,9 @@ public static class HttpUtility
     public static string QueryUri(string url, Dictionary<string, string>? @params = null)
     {
         var uri = new UriBuilder(url);
-        var args = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        NameValueCollection args = System.Web.HttpUtility.ParseQueryString(uri.Query);
         if (@params is not null)
-            foreach (var (key, value) in @params)
+            foreach ((string? key, string? value) in @params)
                 args[key] = value;
         uri.Query = args.ToString();
         return uri.ToString();

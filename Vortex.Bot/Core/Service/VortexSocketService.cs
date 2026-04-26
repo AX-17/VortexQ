@@ -1,8 +1,8 @@
-using System.Net;
-using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Net.Sockets;
 using Vortex.Bot.Configuration;
 using Vortex.Bot.Models;
 using Vortex.Protocol.Interfaces;
@@ -71,7 +71,7 @@ public class VortexSocketService(
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var client = await _listener.AcceptTcpClientAsync(stoppingToken);
+                TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
                 _ = HandleClientAsync(client, stoppingToken);
             }
         }
@@ -89,15 +89,15 @@ public class VortexSocketService(
 
     private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
-        var endpoint = tcpClient.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+        string endpoint = tcpClient.Client.RemoteEndPoint?.ToString() ?? "Unknown";
         _logger.LogInformation("[VortexServer] Client {Endpoint} connected", endpoint);
 
-        using var stream = tcpClient.GetStream();
+        using NetworkStream stream = tcpClient.GetStream();
         ClientConnection? client = null;
 
         try
         {
-            var authPacket = await ReadPacketAsync(stream, cancellationToken);
+            INetPacket? authPacket = await ReadPacketAsync(stream, cancellationToken);
             if (authPacket is not ClientAuthPacket auth)
             {
                 _logger.LogWarning("[VortexServer] Client {Endpoint} did not send auth packet first", endpoint);
@@ -114,7 +114,7 @@ public class VortexSocketService(
             await SendResponseAsync(stream, new ClientAuthResponsePacket { Success = true, Message = "Auth success" }, cancellationToken);
             _logger.LogInformation("[VortexServer] Client {Endpoint} authenticated successfully", endpoint);
 
-            var identityPacket = await ReadPacketAsync(stream, cancellationToken);
+            INetPacket? identityPacket = await ReadPacketAsync(stream, cancellationToken);
             if (identityPacket is not ClientIdentityPacket identity)
             {
                 _logger.LogWarning("[VortexServer] Client {Endpoint} did not send identity packet", endpoint);
@@ -126,7 +126,7 @@ public class VortexSocketService(
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                var packet = await ReadPacketAsync(stream, cancellationToken);
+                INetPacket? packet = await ReadPacketAsync(stream, cancellationToken);
                 if (packet == null) break;
 
                 await ProcessAndRespondAsync(stream, packet, client, cancellationToken);
@@ -158,12 +158,12 @@ public class VortexSocketService(
 
     private async Task<INetPacket?> ReadPacketAsync(NetworkStream stream, CancellationToken cancellationToken)
     {
-        var lengthBytes = new byte[2];
+        byte[] lengthBytes = new byte[2];
         int read = await stream.ReadAsync(lengthBytes.AsMemory(0, 2), cancellationToken);
         if (read < 2) return null;
 
-        var length = BitConverter.ToInt16(lengthBytes);
-        var data = new byte[length];
+        short length = BitConverter.ToInt16(lengthBytes);
+        byte[] data = new byte[length];
         data[0] = lengthBytes[0];
         data[1] = lengthBytes[1];
 
@@ -198,7 +198,7 @@ public class VortexSocketService(
 
     private ClientConnection HandleIdentity(ClientIdentityPacket packet, TcpClient tcpClient, string endpoint)
     {
-        var client = _connectionManager.RegisterClient(packet, tcpClient, endpoint);
+        ClientConnection client = _connectionManager.RegisterClient(packet, tcpClient, endpoint);
         _logger.LogInformation(
             "[VortexServer] Client registered: {ClientName} ({ClientId})",
             client.ClientName, client.ClientId);
@@ -246,7 +246,7 @@ public class VortexSocketService(
 
         OnPacketReceived?.Invoke(client, packet);
 
-        var response = await _handlerManager.ProcessAsync(packet, context);
+        IClientPacket? response = await _handlerManager.ProcessAsync(packet, context);
 
         if (response != null)
         {
@@ -259,7 +259,7 @@ public class VortexSocketService(
 
     private async Task SendResponseAsync(NetworkStream stream, INetPacket packet, CancellationToken cancellationToken)
     {
-        var buffer = _serializer.Serialize(packet);
+        byte[] buffer = _serializer.Serialize(packet);
         await stream.WriteAsync(buffer, cancellationToken);
     }
 
@@ -267,7 +267,7 @@ public class VortexSocketService(
 
     public async Task<bool> SendToClientAsync(Guid clientId, INetPacket packet)
     {
-        var client = _connectionManager.GetClient(clientId);
+        ClientConnection? client = _connectionManager.GetClient(clientId);
         if (client == null)
         {
             _logger.LogWarning("[VortexServer] Client {ClientId} not found", clientId);
@@ -276,7 +276,7 @@ public class VortexSocketService(
 
         try
         {
-            var buffer = _serializer.Serialize(packet);
+            byte[] buffer = _serializer.Serialize(packet);
             await client.Stream.WriteAsync(buffer);
             return true;
         }
@@ -289,15 +289,15 @@ public class VortexSocketService(
 
     public Task<bool> SendToSessionAsync(int sessionId, INetPacket packet)
     {
-        var client = _connectionManager.GetClientBySession(sessionId);
+        ClientConnection? client = _connectionManager.GetClientBySession(sessionId);
         return client != null ? SendToClientAsync(client.ClientId, packet) : Task.FromResult(false);
     }
 
     public async Task<int> BroadcastAsync(INetPacket packet)
     {
-        var clients = _connectionManager.GetAllClients();
-        var tasks = clients.Select(c => SendToClientAsync(c.ClientId, packet)).ToArray();
-        var results = await Task.WhenAll(tasks);
+        IReadOnlyCollection<ClientConnection> clients = _connectionManager.GetAllClients();
+        Task<bool>[] tasks = clients.Select(c => SendToClientAsync(c.ClientId, packet)).ToArray();
+        bool[] results = await Task.WhenAll(tasks);
         return results.Count(r => r);
     }
 
@@ -336,7 +336,7 @@ public class VortexSocketService(
             using var cts = new CancellationTokenSource(timeoutMs);
             await using (cts.Token.Register(() => tcs.TrySetCanceled()))
             {
-                var result = await tcs.Task;
+                IClientPacket result = await tcs.Task;
                 return result as TResponse;
             }
         }

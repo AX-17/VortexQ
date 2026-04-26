@@ -55,7 +55,7 @@ public class TableBuilder
     public TableBuilder SetHeader(params string[] headers)
     {
         if (headers == null || headers.Length == 0) return this;
-        foreach (var value in headers)
+        foreach (string value in headers)
         {
             Header.Add(new TableCell(value));
         }
@@ -65,7 +65,7 @@ public class TableBuilder
     public TableBuilder SetHeader(params TableCell[] headers)
     {
         if (headers == null || headers.Length == 0) return this;
-        foreach (var value in headers)
+        foreach (TableCell value in headers)
         {
             Header.Add(value);
         }
@@ -77,7 +77,7 @@ public class TableBuilder
         if (rows == null || rows.Length == 0) return this;
 
         var conten = new TableContent();
-        foreach (var value in rows)
+        foreach (string value in rows)
         {
             conten.Content.Add(new TableCell(value));
         }
@@ -90,7 +90,7 @@ public class TableBuilder
         if (rows == null || rows.Length == 0) return this;
 
         var conten = new TableContent();
-        foreach (var value in rows)
+        foreach (TableCell value in rows)
         {
             conten.Content.Add(value);
         }
@@ -197,7 +197,7 @@ public class TableBuilder
     public byte[] Builder()
     {
         if (Header.Count == 0) throw new Exception("you must set table header!");
-        using var image = TableGenerate.DrawContent(this);
+        using Image<Rgba32> image = TableGenerate.DrawContent(this);
         return image.ToBytesAsync().Result;
     }
 }
@@ -248,21 +248,21 @@ public class TableGenerate
 
     public (int[] RowHeigth, int[] RowWidth) ComputeLayout(TableBuilder builder)
     {
-        var tableFont = GetFontFamily().CreateFont(TableFontSize);
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        Font tableFont = GetFontFamily().CreateFont(TableFontSize);
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         var textOption = new RichTextOptions(tableFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             WrappingLength = textSize.Width * LineMaxTextLength,
             WordBreaking = WordBreaking.BreakAll
         };
-        var RowHeigths = new int[builder.Row.Count + 1]; // 包含表头
-        var RowWidths = new int[builder.Header.Count];
+        int[] RowHeigths = new int[builder.Row.Count + 1]; // 包含表头
+        int[] RowWidths = new int[builder.Header.Count];
 
         // 计算表头尺寸
         for (int j = 0; j < builder.Header.Count; j++)
         {
-            var size = TextMeasurer.MeasureSize(builder.Header[j].Text, textOption);
+            FontRectangle size = TextMeasurer.MeasureSize(builder.Header[j].Text, textOption);
             RowHeigths[0] = Math.Max(RowHeigths[0], (int)size.Height);
             RowWidths[j] = Math.Max(RowWidths[j], (int)size.Width);
         }
@@ -272,17 +272,17 @@ public class TableGenerate
         {
             for (int j = 0; j < builder.Row[i].Content.Count; j++)
             {
-                var size = TextMeasurer.MeasureSize(builder.Row[i].Content[j].Text, textOption);
+                FontRectangle size = TextMeasurer.MeasureSize(builder.Row[i].Content[j].Text, textOption);
                 RowHeigths[i + 1] = Math.Max(RowHeigths[i + 1], (int)size.Height);
                 RowWidths[j] = Math.Max(RowWidths[j], (int)size.Width);
             }
         }
 
         // 确保表格宽度不小于最小宽度
-        var totalWidth = RowWidths.Sum() + 2 * Gap * builder.Header.Count;
+        int totalWidth = RowWidths.Sum() + (2 * Gap * builder.Header.Count);
         if (totalWidth < MinTableWidth)
         {
-            var extraWidth = (MinTableWidth - totalWidth) / builder.Header.Count;
+            int extraWidth = (MinTableWidth - totalWidth) / builder.Header.Count;
             for (int j = 0; j < RowWidths.Length; j++)
             {
                 RowWidths[j] += extraWidth;
@@ -297,16 +297,16 @@ public class TableGenerate
     public Image<Rgba32> DrawContent(TableBuilder builder)
     {
         using var background = Image.Load<Rgba32>(BackgroundPath);
-        var fontFamily = GetFontFamily();
-        var tableFont = fontFamily.CreateFont(TableFontSize);
-        var titleFont = fontFamily.CreateFont(TitleFontSize);
-        var signFont = fontFamily.CreateFont(SignaturFontSize);
+        FontFamily fontFamily = GetFontFamily();
+        Font tableFont = fontFamily.CreateFont(TableFontSize);
+        Font titleFont = fontFamily.CreateFont(TitleFontSize);
+        Font signFont = fontFamily.CreateFont(SignaturFontSize);
 
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
-        var (RowHeigth, RowWidths) = ComputeLayout(builder);
-        var maxHeight = RowHeigth.Sum(i => i + 2 * Gap) + TableTopMargin + TableBottomMargin;
-        var maxWidth = RowWidths.Sum(i => i + 2 * Gap) + 2 * TableMargin;
-        var image = background.Crop(maxWidth + 2 * CardMargin, maxHeight + CardTopMargin + CardBottomMargin);
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        (int[]? RowHeigth, int[]? RowWidths) = ComputeLayout(builder);
+        int maxHeight = RowHeigth.Sum(i => i + (2 * Gap)) + TableTopMargin + TableBottomMargin;
+        int maxWidth = RowWidths.Sum(i => i + (2 * Gap)) + (2 * TableMargin);
+        Image<Rgba32> image = background.Crop(maxWidth + (2 * CardMargin), maxHeight + CardTopMargin + CardBottomMargin);
 
         image.Mutate(d =>
         {
@@ -330,16 +330,16 @@ public class TableGenerate
 
     private void DrawTitle(IImageProcessingContext d, Font titleFont, int maxWidth)
     {
-        var titleSize = TextMeasurer.MeasureSize(Title, new TextOptions(titleFont));
-        var titlePosition = new PointF(CardMargin + (maxWidth - titleSize.Width) / 2, CardTopMargin + 30);
+        FontRectangle titleSize = TextMeasurer.MeasureSize(Title, new TextOptions(titleFont));
+        var titlePosition = new PointF(CardMargin + ((maxWidth - titleSize.Width) / 2), CardTopMargin + 30);
         d.DrawText(Title, titleFont, TitleColor, titlePosition);
     }
 
     private void DrawAvatar(IImageProcessingContext d, int maxWidth)
     {
-        var avatarSize = 200;
-        using var avatar = GetAvatar(avatarSize);
-        var avatarPosition = new Point(CardMargin + (maxWidth - avatarSize) / 2, CardTopMargin + 120);
+        int avatarSize = 200;
+        using Image<Rgba32> avatar = GetAvatar(avatarSize);
+        var avatarPosition = new Point(CardMargin + ((maxWidth - avatarSize) / 2), CardTopMargin + 120);
         d.DrawImage(avatar, avatarPosition, 1);
     }
 
@@ -351,7 +351,7 @@ public class TableGenerate
             d.DrawLine(TableThicknessColor, 1, new PointF(xOffset, CardTopMargin + TableTopMargin), new PointF(xOffset, CardTopMargin + TableTopMargin + maxHeight - TableTopMargin - TableBottomMargin));
             if (j < builder.Header.Count)
             {
-                xOffset += RowWidths[j] + 2 * Gap;
+                xOffset += RowWidths[j] + (2 * Gap);
             }
         }
     }
@@ -361,23 +361,23 @@ public class TableGenerate
         int yOffset = CardTopMargin + TableTopMargin;
         for (int i = 0; i <= builder.Row.Count; i++)
         {
-            d.DrawLine(TableThicknessColor, 1, new PointF(CardMargin + TableMargin, yOffset), new PointF(CardMargin + TableMargin + maxWidth - 2 * TableMargin, yOffset));
+            d.DrawLine(TableThicknessColor, 1, new PointF(CardMargin + TableMargin, yOffset), new PointF(CardMargin + TableMargin + maxWidth - (2 * TableMargin), yOffset));
             if (i < builder.Row.Count)
             {
-                yOffset += RowHeigth[i] + 2 * Gap;
+                yOffset += RowHeigth[i] + (2 * Gap);
             }
         }
-        d.DrawLine(TableThicknessColor, 1, new PointF(CardMargin + TableMargin, CardTopMargin + TableTopMargin + maxHeight - TableTopMargin - TableBottomMargin), new PointF(CardMargin + TableMargin + maxWidth - 2 * TableMargin, CardTopMargin + TableTopMargin + maxHeight - TableTopMargin - TableBottomMargin));
+        d.DrawLine(TableThicknessColor, 1, new PointF(CardMargin + TableMargin, CardTopMargin + TableTopMargin + maxHeight - TableTopMargin - TableBottomMargin), new PointF(CardMargin + TableMargin + maxWidth - (2 * TableMargin), CardTopMargin + TableTopMargin + maxHeight - TableTopMargin - TableBottomMargin));
     }
 
     private void DrawHeaderText(IImageProcessingContext d, TableBuilder builder, Font tableFont, int[] RowWidths, int[] RowHeigth)
     {
         int xOffset = CardMargin + TableMargin;
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         for (int j = 0; j < builder.Header.Count; j++)
         {
-            var cell = builder.Header[j];
-            var cellRect = new RectangleF(xOffset, CardTopMargin + TableTopMargin, RowWidths[j] + 2 * Gap, RowHeigth[0] + 2 * Gap);
+            TableCell cell = builder.Header[j];
+            var cellRect = new RectangleF(xOffset, CardTopMargin + TableTopMargin, RowWidths[j] + (2 * Gap), RowHeigth[0] + (2 * Gap));
             if (cell.UseBackgroundColor)
             {
                 d.Fill(cell.BackgroundColor, cellRect);
@@ -389,42 +389,42 @@ public class TableGenerate
                 VerticalAlignment = VerticalAlignment.Center,
                 WrappingLength = textSize.Width * LineMaxTextLength,
                 WordBreaking = WordBreaking.BreakAll,
-                Origin = new PointF(xOffset + RowWidths[j] / 2 + Gap, CardTopMargin + TableTopMargin + RowHeigth[0] / 2 + Gap)
+                Origin = new PointF(xOffset + (RowWidths[j] / 2) + Gap, CardTopMargin + TableTopMargin + (RowHeigth[0] / 2) + Gap)
             };
             d.DrawText(textOption, cell.Text, cell.UseTextColor ? cell.TextColor : TableFontColor);
-            xOffset += RowWidths[j] + 2 * Gap;
+            xOffset += RowWidths[j] + (2 * Gap);
         }
     }
 
     private void DrawContentText(IImageProcessingContext d, TableBuilder builder, Font tableFont, int[] RowWidths, int[] RowHeigth)
     {
-        int yOffset = CardTopMargin + TableTopMargin + RowHeigth[0] + 2 * Gap;
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        int yOffset = CardTopMargin + TableTopMargin + RowHeigth[0] + (2 * Gap);
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         for (int i = 0; i < builder.Row.Count; i++)
         {
             int xOffset = CardMargin + TableMargin;
             for (int j = 0; j < builder.Row[i].Content.Count; j++)
             {
-                var cell = builder.Row[i].Content[j];
-                var cellRect = new RectangleF(xOffset, yOffset, RowWidths[j] + 2 * Gap, RowHeigth[i + 1] + 2 * Gap);
+                TableCell cell = builder.Row[i].Content[j];
+                var cellRect = new RectangleF(xOffset, yOffset, RowWidths[j] + (2 * Gap), RowHeigth[i + 1] + (2 * Gap));
                 if (cell.UseBackgroundColor)
                 {
                     d.Fill(cell.BackgroundColor, cellRect);
                 }
 
-                float textY = yOffset + RowHeigth[i + 1] / 2 + Gap;
+                float textY = yOffset + (RowHeigth[i + 1] / 2) + Gap;
                 var textOption = new RichTextOptions(tableFont)
                 {
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                     WrappingLength = textSize.Width * LineMaxTextLength,
                     WordBreaking = WordBreaking.BreakAll,
-                    Origin = new PointF(xOffset + RowWidths[j] / 2 + Gap, textY)
+                    Origin = new PointF(xOffset + (RowWidths[j] / 2) + Gap, textY)
                 };
                 d.DrawText(textOption, cell.Text, cell.UseTextColor ? cell.TextColor : TableFontColor);
-                xOffset += RowWidths[j] + 2 * Gap;
+                xOffset += RowWidths[j] + (2 * Gap);
             }
-            yOffset += RowHeigth[i + 1] + 2 * Gap;
+            yOffset += RowHeigth[i + 1] + (2 * Gap);
         }
     }
 

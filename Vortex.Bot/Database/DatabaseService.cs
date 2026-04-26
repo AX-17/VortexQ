@@ -1,7 +1,7 @@
-using System.Data;
 using LinqToDB;
 using LinqToDB.Data;
 using Microsoft.Data.Sqlite;
+using System.Data;
 
 namespace Vortex.Bot.Database;
 
@@ -30,7 +30,7 @@ public class DatabaseService : IDatabaseService, IDisposable
     public DatabaseService(string dbPath)
     {
         _dbPath = dbPath;
-        var dir = Path.GetDirectoryName(dbPath);
+        string? dir = Path.GetDirectoryName(dbPath);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
         {
             Directory.CreateDirectory(dir);
@@ -77,7 +77,7 @@ public class DataContext<T> : DataConnection, IDataContext<T> where T : class, n
 
     int IDataContext<T>.Delete(Func<T, bool> predicate)
     {
-        var items = this.GetTable<T>().Where(predicate).ToList();
+        List<T> items = this.GetTable<T>().Where(predicate).ToList();
         int count = 0;
         foreach (var item in items)
         {

@@ -1,3 +1,4 @@
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
 
@@ -17,7 +18,7 @@ public static class GroupAdminCommand
         [Main]
         public static async Task Execute(CommandArgs args, [Param("组名")] string groupName)
         {
-            try 
+            try
             {
                 Group.Add(groupName);
                 await args.ReplyAsync($"组 {groupName} 添加成功!");
@@ -117,7 +118,7 @@ public static class GroupAdminCommand
         [Main]
         public static async Task Execute(CommandArgs args)
         {
-            var groups = Group.GetAll();
+            List<Group> groups = Group.GetAll();
 
             if (groups.Count == 0)
             {
@@ -125,9 +126,9 @@ public static class GroupAdminCommand
                 return;
             }
 
-            var sb = new System.Text.StringBuilder();
+            StringBuilder sb = new System.Text.StringBuilder();
             sb.AppendLine("权限组列表:");
-            foreach (var group in groups)
+            foreach (Group group in groups)
             {
                 var perms = string.Join(", ", group.Permissions);
                 var parent = string.IsNullOrEmpty(group.Parent?.Name) ? "无" : group.Parent?.Name;

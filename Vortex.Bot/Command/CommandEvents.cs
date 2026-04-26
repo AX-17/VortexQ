@@ -1,5 +1,3 @@
-using Vortex.Bot.Database.Models;
-
 namespace Vortex.Bot.Command;
 
 public abstract class CommandEventArgs(CommandArgs args, string commandName) : EventArgs
@@ -85,7 +83,7 @@ public static class CommandEvents
 
     internal static async Task<PermissionCheckResult> TriggerPermissionChecking(CommandArgs args, string[] requiredPermissions)
     {
-        var eventArgs = new PermissionCheckEventArgs(args, requiredPermissions);
+        PermissionCheckEventArgs eventArgs = new PermissionCheckEventArgs(args, requiredPermissions);
 
         if (OnPermissionChecking != null)
         {

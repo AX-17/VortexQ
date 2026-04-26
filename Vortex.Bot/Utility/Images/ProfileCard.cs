@@ -1,4 +1,4 @@
-﻿﻿using SixLabors.Fonts;
+﻿using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -35,7 +35,7 @@ public class ProfileItemBuilder
     // 添加自定义颜色的条目
     public ProfileItemBuilder AddItem(string label, string value, Color labelColor, Color valueColor, Color valueBackgroundColor)
     {
-        var item = new ProfileItem(label, value)
+        ProfileItem item = new ProfileItem(label, value)
         {
             LabelColor = labelColor,
             ValueColor = valueColor,
@@ -48,7 +48,7 @@ public class ProfileItemBuilder
     // 添加特殊样式的条目
     public ProfileItemBuilder AddSpecialItem(string label, string value, bool useEllipseBackground)
     {
-        var item = new ProfileItem(label, value)
+        ProfileItem item = new ProfileItem(label, value)
         {
             UseEllipseBackground = useEllipseBackground
         };
@@ -258,16 +258,16 @@ public class ProfileCard
         try
         {
             // 创建头像
-            using var avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
+            using Image<Rgba32> avatar = ImageUtility.GetAvatar(MemberUin, AvatarSize);
 
             // 计算尺寸和位置
-            var layout = CalculateLayout(avatar.Height, builder);
+            (int CardHeight, int CardWidth, int BackgroundWidth, int BackgroundHeight, int CardX, int CardY) layout = CalculateLayout(avatar.Height, builder);
 
             // 准备背景
-            using var background = PrepareBackground(layout.BackgroundWidth, layout.BackgroundHeight);
+            using Image<Rgba32> background = PrepareBackground(layout.BackgroundWidth, layout.BackgroundHeight);
 
             // 创建卡片层
-            using var cardBackground = CreateCardLayer(background, layout);
+            using Image<Rgba32> cardBackground = CreateCardLayer(background, layout);
 
             // 将内容绘制到卡片上
             DrawContent(cardBackground, avatar, layout, builder);
@@ -291,9 +291,9 @@ public class ProfileCard
     private (int CardHeight, int CardWidth, int BackgroundWidth, int BackgroundHeight, int CardX, int CardY)
         CalculateLayout(int avatarHeight, ProfileItemBuilder builder)
     {
-        var fontFamily = GetFontFamily();
-        var titleFont = fontFamily.CreateFont(TitleFontSize, FontStyle.Bold);
-        var normalFont = fontFamily.CreateFont(NormalFontSize, FontStyle.Regular);
+        FontFamily fontFamily = GetFontFamily();
+        Font titleFont = fontFamily.CreateFont(TitleFontSize, FontStyle.Bold);
+        Font normalFont = fontFamily.CreateFont(NormalFontSize, FontStyle.Regular);
 
         // 预先计算卡片所需高度
         int titleHeight = !string.IsNullOrEmpty(Title) ?
@@ -326,7 +326,7 @@ public class ProfileCard
         using Image<Rgba32> originalBackground = Image.Load<Rgba32>(BackgroundPath);
 
         // 创建背景画布
-        var background = new Image<Rgba32>(width, height);
+        Image<Rgba32> background = new Image<Rgba32>(width, height);
 
         // 调整原始背景大小并填充到新画布
         originalBackground.Mutate(x => x.Resize(new ResizeOptions
@@ -344,7 +344,7 @@ public class ProfileCard
     private Image<Rgba32> CreateCardLayer(Image<Rgba32> background,
         (int CardHeight, int CardWidth, int BackgroundWidth, int BackgroundHeight, int CardX, int CardY) layout)
     {
-        var cardBackground = new Image<Rgba32>(layout.BackgroundWidth, layout.BackgroundHeight);
+        Image<Rgba32> cardBackground = new Image<Rgba32>(layout.BackgroundWidth, layout.BackgroundHeight);
         cardBackground.Mutate(x =>
         {
             // 复制背景图像
@@ -367,10 +367,10 @@ public class ProfileCard
     private void DrawContent(Image<Rgba32> canvas, Image<Rgba32> avatar,
         (int CardHeight, int CardWidth, int BackgroundWidth, int BackgroundHeight, int CardX, int CardY) layout, ProfileItemBuilder builder)
     {
-        var fontFamily = GetFontFamily();
-        var titleFont = fontFamily.CreateFont(TitleFontSize, FontStyle.Bold);
-        var normalFont = fontFamily.CreateFont(NormalFontSize, FontStyle.Regular);
-        var smallFont = fontFamily.CreateFont(SmallFontSize, FontStyle.Regular);
+        FontFamily fontFamily = GetFontFamily();
+        Font titleFont = fontFamily.CreateFont(TitleFontSize, FontStyle.Bold);
+        Font normalFont = fontFamily.CreateFont(NormalFontSize, FontStyle.Regular);
+        Font smallFont = fontFamily.CreateFont(SmallFontSize, FontStyle.Regular);
 
         canvas.Mutate(x =>
         {
@@ -399,7 +399,7 @@ public class ProfileCard
     // 绘制标题
     private int DrawTitle(IImageProcessingContext context, Font titleFont, int currentY, int canvasWidth)
     {
-        var titleOptions = new RichTextOptions(titleFont)
+        RichTextOptions titleOptions = new RichTextOptions(titleFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             Origin = new PointF(canvasWidth / 2, currentY)
@@ -414,7 +414,7 @@ public class ProfileCard
     // 绘制头像
     private int DrawAvatar(IImageProcessingContext context, Image avatar, int currentY, int canvasWidth)
     {
-        int avatarX = canvasWidth / 2 - avatar.Width / 2;
+        int avatarX = (canvasWidth / 2) - (avatar.Width / 2);
         context.DrawImage(avatar, new Point(avatarX, currentY), 1f);
 
         return currentY + avatar.Height + 30; // 返回头像下方的Y坐标
@@ -426,15 +426,15 @@ public class ProfileCard
         int leftMargin = cardX + 40;
         int rightMargin = cardX + cardWidth - 40;
 
-        foreach (var item in builder.items)
+        foreach (ProfileItem item in builder.items)
         {
             // 获取颜色，如果没有自定义颜色则使用默认颜色
-            var labelColor = item.LabelColor;
-            var valueColor = item.ValueColor;
-            var valueBackgroundColor = item.ValueBackgroundColor;
+            Color labelColor = item.LabelColor;
+            Color valueColor = item.ValueColor;
+            Color valueBackgroundColor = item.ValueBackgroundColor;
 
             // 标签 - 左对齐
-            var labelOptions = new RichTextOptions(normalFont)
+            RichTextOptions labelOptions = new RichTextOptions(normalFont)
             {
                 Origin = new PointF(leftMargin, currentY),
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -442,7 +442,7 @@ public class ProfileCard
             context.DrawText(labelOptions, item.Label, labelColor);
 
             // 值文本 - 右对齐
-            var valueTextSize = TextMeasurer.MeasureSize(item.Value, new TextOptions(normalFont));
+            FontRectangle valueTextSize = TextMeasurer.MeasureSize(item.Value, new TextOptions(normalFont));
             int paddingX = 15;
             int paddingY = 5;
 
@@ -461,7 +461,7 @@ public class ProfileCard
                 float ellipseCenterX = rightMargin - (backgroundWidth / 2);
                 float ellipseCenterY = currentY + (valueTextSize.Height / 2);
 
-                var ellipse = new EllipsePolygon(ellipseCenterX, ellipseCenterY, backgroundWidth / 2, backgroundHeight / 2);
+                EllipsePolygon ellipse = new EllipsePolygon(ellipseCenterX, ellipseCenterY, backgroundWidth / 2, backgroundHeight / 2);
                 context.Fill(valueBackgroundColor, ellipse);
             }
             else
@@ -476,7 +476,7 @@ public class ProfileCard
             }
 
             // 绘制文本值
-            var valueTextOptions = new RichTextOptions(normalFont)
+            RichTextOptions valueTextOptions = new RichTextOptions(normalFont)
             {
                 Origin = new PointF(valueTextX, valueTextY),
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -492,7 +492,7 @@ public class ProfileCard
     // 绘制签名
     private void DrawSignature(IImageProcessingContext context, Font smallFont, int currentY, int canvasWidth)
     {
-        var signatureOptions = new RichTextOptions(smallFont)
+        RichTextOptions signatureOptions = new RichTextOptions(smallFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             Origin = new PointF(canvasWidth / 2, currentY + 10)

@@ -16,8 +16,8 @@ public static class IImageProcessingContextExtensions
             context.Fill(color, new RectangleF(x, y, width, height));
             return;
         }
-        var radius = cornerRadius * 2;
-        var pathBuilder = new PathBuilder();
+        float radius = cornerRadius * 2;
+        PathBuilder pathBuilder = new PathBuilder();
         pathBuilder.StartFigure()
             .AddLine(x + cornerRadius, y, x + width - cornerRadius, y)
             .AddArc(new RectangleF(x + width - radius, y, radius, radius), 0, 270, 90)
@@ -40,8 +40,8 @@ public static class IImageProcessingContextExtensions
             context.Draw(color, size, new RectangleF(x, y, width, height));
             return;
         }
-        var radius = cornerRadius * 2;
-        var pathBuilder = new PathBuilder();
+        float radius = cornerRadius * 2;
+        PathBuilder pathBuilder = new PathBuilder();
         pathBuilder.StartFigure()
             .AddLine(x + cornerRadius, y, x + width - cornerRadius, y)
             .AddArc(new RectangleF(x + width - radius, y, radius, radius), 0, 270, 90)

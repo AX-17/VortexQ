@@ -1,13 +1,7 @@
-using System.Text;
 using LinqToDB.Mapping;
-using Vortex.Bot.Database;
 
 namespace Vortex.Bot.Database.Models;
 
-/// <summary>
-/// 权限组实体 - 兼容 XocMat 原有表结构
-/// 表名: GroupList
-/// </summary>
 [Table("GroupList")]
 public class Group
 {
@@ -15,16 +9,13 @@ public class Group
     [PrimaryKey]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 权限字符串（逗号分隔，以!开头的为否定权限）
-    /// </summary>
     [Column]
     public string Permission
     {
         get
         {
-            var all = new List<string>(_permissions);
-            foreach (var perm in _negatedPermissions)
+            List<string> all = new List<string>(_permissions);
+            foreach (string perm in _negatedPermissions)
             {
                 all.Add("!" + perm);
             }
@@ -36,7 +27,7 @@ public class Group
             _negatedPermissions.Clear();
             if (!string.IsNullOrEmpty(value))
             {
-                foreach (var perm in value.Split(','))
+                foreach (string perm in value.Split(','))
                 {
                     AddPermission(perm.Trim());
                 }
@@ -44,9 +35,6 @@ public class Group
         }
     }
 
-    /// <summary>
-    /// 父组名称
-    /// </summary>
     [Column]
     public string parent { get; set; } = string.Empty;
 
@@ -56,21 +44,12 @@ public class Group
     [NotColumn]
     private List<string> _negatedPermissions = [];
 
-    /// <summary>
-    /// 当前组的权限列表（不包括继承的）
-    /// </summary>
     [NotColumn]
     public IReadOnlyList<string> Permissions => _permissions.AsReadOnly();
 
-    /// <summary>
-    /// 当前组的否定权限列表
-    /// </summary>
     [NotColumn]
     public IReadOnlyList<string> NegatedPermissions => _negatedPermissions.AsReadOnly();
 
-    /// <summary>
-    /// 父组
-    /// </summary>
     [NotColumn]
     public Group? Parent
     {
@@ -78,9 +57,8 @@ public class Group
         set => parent = value?.Name ?? string.Empty;
     }
 
-    /// <summary>
-    /// 添加权限
-    /// </summary>
+    public static IDataContext<Group> DataContext => RecordBase.GetContext<Group>("GroupList");
+
     public void AddPermission(string permission)
     {
         if (string.IsNullOrWhiteSpace(permission))
@@ -88,31 +66,26 @@ public class Group
 
         if (permission.StartsWith("!"))
         {
-            // 否定权限
-            var actualPerm = permission[1..];
+            string actualPerm = permission[1..];
             if (!_negatedPermissions.Contains(actualPerm))
             {
                 _negatedPermissions.Add(actualPerm);
-                _permissions.Remove(actualPerm); // 移除冲突的正向权限
+                _permissions.Remove(actualPerm);
             }
         }
         else
         {
-            // 正向权限
             if (!_permissions.Contains(permission))
             {
                 _permissions.Add(permission);
-                _negatedPermissions.Remove(permission); // 移除冲突的否定权限
+                _negatedPermissions.Remove(permission);
             }
         }
     }
 
-    /// <summary>
-    /// 移除权限
-    /// </summary>
     public void RemovePermission(string permission)
     {
-        if (permission.StartsWith("!"))
+        if (permission.StartsWith('!'))
         {
             _negatedPermissions.Remove(permission[1..]);
         }
@@ -122,27 +95,21 @@ public class Group
         }
     }
 
-    /// <summary>
-    /// 设置权限列表
-    /// </summary>
     public void SetPermissions(IEnumerable<string> permissions)
     {
         _permissions.Clear();
         _negatedPermissions.Clear();
-        foreach (var perm in permissions)
+        foreach (string perm in permissions)
         {
             AddPermission(perm);
         }
     }
 
-    /// <summary>
-    /// 获取所有有效权限（包括继承的，已解决冲突）
-    /// </summary>
     public List<string> GetTotalPermissions()
     {
-        var allPerms = new HashSet<string>();
-        var negatedPerms = new HashSet<string>();
-        var traversed = new HashSet<string>(); // 防止循环继承
+        HashSet<string> allPerms = new HashSet<string>();
+        HashSet<string> negatedPerms = new HashSet<string>();
+        HashSet<string> traversed = new HashSet<string>();
 
         Group? current = this;
         while (current != null)
@@ -153,8 +120,7 @@ public class Group
             }
             traversed.Add(current.Name);
 
-            // 先添加正向权限
-            foreach (var perm in current._permissions)
+            foreach (string perm in current._permissions)
             {
                 if (!negatedPerms.Contains(perm))
                 {
@@ -162,8 +128,7 @@ public class Group
                 }
             }
 
-            // 再处理否定权限
-            foreach (var perm in current._negatedPermissions)
+            foreach (string perm in current._negatedPermissions)
             {
                 allPerms.Remove(perm);
                 negatedPerms.Add(perm);
@@ -175,26 +140,21 @@ public class Group
         return [.. allPerms];
     }
 
-    /// <summary>
-    /// 检查是否有指定权限（支持通配符 *）
-    /// </summary>
     public bool HasPermission(string permission)
     {
         if (string.IsNullOrEmpty(permission))
             return true;
 
-        // 检查精确权限
         if (HasExactPermission(permission, out bool negated))
         {
             return !negated;
         }
 
-        // 检查通配符权限
-        var nodes = permission.Split('.');
+        string[] nodes = permission.Split('.');
         for (int i = nodes.Length - 1; i >= 0; i--)
         {
             nodes[i] = "*";
-            var wildcardPerm = string.Join(".", nodes, 0, i + 1);
+            string wildcardPerm = string.Join(".", nodes, 0, i + 1);
             if (HasExactPermission(wildcardPerm, out negated))
             {
                 return !negated;
@@ -204,13 +164,10 @@ public class Group
         return false;
     }
 
-    /// <summary>
-    /// 检查是否有精确权限（不包括通配符）
-    /// </summary>
     private bool HasExactPermission(string permission, out bool negated)
     {
         negated = false;
-        var traversed = new HashSet<string>();
+        HashSet<string> traversed = new HashSet<string>();
 
         Group? current = this;
         while (current != null)
@@ -221,14 +178,12 @@ public class Group
             }
             traversed.Add(current.Name);
 
-            // 先检查否定权限
             if (current._negatedPermissions.Contains(permission))
             {
                 negated = true;
                 return false;
             }
 
-            // 再检查正向权限
             if (current._permissions.Contains(permission))
             {
                 return true;
@@ -242,43 +197,17 @@ public class Group
 
     #region 静态方法
 
-    /// <summary>
-    /// 获取所有组
-    /// </summary>
-    public static List<Group> GetAll()
-    {
-        return RecordBase.GetContext<Group>("GroupList").Records.ToList();
-    }
+    public static List<Group> GetAll() => [.. DataContext.Records];
 
-    /// <summary>
-    /// 根据名称获取组
-    /// </summary>
     public static Group? GetGroup(string name)
     {
-        if (string.IsNullOrEmpty(name))
-            return null;
-        return RecordBase.GetContext<Group>("GroupList").Records.FirstOrDefault(g => g.Name == name);
+        return string.IsNullOrEmpty(name) ? null : DataContext.Records.FirstOrDefault(g => g.Name == name);
     }
 
-    /// <summary>
-    /// 获取组，如果不存在返回默认组
-    /// </summary>
-    public static Group GetGroupOrDefault(string name)
-    {
-        return GetGroup(name) ?? DefaultGroup.Instance;
-    }
+    public static Group GetGroupOrDefault(string name) => GetGroup(name) ?? DefaultGroup.Instance;
 
-    /// <summary>
-    /// 检查组是否存在
-    /// </summary>
-    public static bool Exists(string name)
-    {
-        return RecordBase.GetContext<Group>("GroupList").Records.Any(g => g.Name == name);
-    }
+    public static bool Exists(string name) => DataContext.Records.Any(g => g.Name == name);
 
-    /// <summary>
-    /// 添加组
-    /// </summary>
     public static void Add(string name, string permissions = "", string? parentName = null)
     {
         if (Exists(name))
@@ -286,35 +215,21 @@ public class Group
             throw new InvalidOperationException($"组 '{name}' 已存在");
         }
 
-        var group = new Group
+        Group group = new Group
         {
             Name = name,
             Permission = permissions,
             parent = parentName ?? DefaultGroup.Instance.Name
         };
 
-        RecordBase.GetContext<Group>("GroupList").Insert(group);
+        DataContext.Insert(group);
     }
 
-    /// <summary>
-    /// 更新组
-    /// </summary>
-    public static void Update(Group group)
-    {
-        RecordBase.GetContext<Group>("GroupList").Update(group);
-    }
 
-    /// <summary>
-    /// 删除组
-    /// </summary>
-    public static void Delete(string name)
-    {
-        RecordBase.GetContext<Group>("GroupList").Delete(g => g.Name == name);
-    }
+    public static void Update(Group group) => DataContext.Update(group);
 
-    /// <summary>
-    /// 添加权限到组
-    /// </summary>
+    public static void Delete(string name) => DataContext.Delete(g => g.Name == name);
+
     public static void AddPermission(string groupName, string permission)
     {
         var group = GetGroup(groupName) ?? throw new InvalidOperationException($"组 '{groupName}' 不存在");
@@ -322,9 +237,6 @@ public class Group
         Update(group);
     }
 
-    /// <summary>
-    /// 从组移除权限
-    /// </summary>
     public static void RemovePermission(string groupName, string permission)
     {
         var group = GetGroup(groupName) ?? throw new InvalidOperationException($"组 '{groupName}' 不存在");
@@ -332,9 +244,6 @@ public class Group
         Update(group);
     }
 
-    /// <summary>
-    /// 更改组的父组
-    /// </summary>
     public static void SetParent(string groupName, string parentName)
     {
         var group = GetGroup(groupName) ?? throw new InvalidOperationException($"组 '{groupName}' 不存在");

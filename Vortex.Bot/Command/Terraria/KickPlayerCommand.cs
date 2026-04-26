@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -13,21 +14,21 @@ public static class KickPlayerCommand
     [Main]
     public static async Task Execute(GroupCommandArgs args, [Param("玩家名称")] string playerName, [Param("原因(可选)")] string reason = "")
     {
-        var serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
+        TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
             await args.ReplyAsync("服务器管理器未初始化");
             return;
         }
 
-        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out var server) || server == null)
+        if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
             await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
-        var kickReason = string.IsNullOrEmpty(reason) ? "Kicked by admin" : reason;
-        var result = await server.ExecuteCommandAsync($"/kick {playerName} \"{kickReason}\"");
+        string kickReason = string.IsNullOrEmpty(reason) ? "Kicked by admin" : reason;
+        ExecuteCommandPacketResponse? result = await server.ExecuteCommandAsync($"/kick {playerName} \"{kickReason}\"");
 
         if (result?.Success == true)
         {

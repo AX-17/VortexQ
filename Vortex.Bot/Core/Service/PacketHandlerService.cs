@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using Vortex.Bot.Interface;
 using Vortex.Bot.Models;
 using Vortex.Bot.Processing;
@@ -23,8 +23,8 @@ public class PacketHandlerService(
         where TRequest : IServicePacket, new()
         where TResponse : IClientPacket, new()
     {
-        var instance = new TRequest();
-        var packetId = (byte)instance.PacketID;
+        TRequest instance = new TRequest();
+        byte packetId = (byte)instance.PacketID;
 
         _handlers[packetId] = async (packet, context) =>
         {
@@ -44,8 +44,8 @@ public class PacketHandlerService(
         where TRequest : IServicePacket, new()
         where TResponse : IClientPacket, new()
     {
-        var instance = new TRequest();
-        var packetId = (byte)instance.PacketID;
+        TRequest instance = new TRequest();
+        byte packetId = (byte)instance.PacketID;
 
         _handlers[packetId] = async (packet, context) =>
         {
@@ -65,8 +65,8 @@ public class PacketHandlerService(
         where TRequest : IServicePacket, new()
         where TResponse : IClientPacket, new()
     {
-        var instance = new TRequest();
-        var packetId = (byte)instance.PacketID;
+        TRequest instance = new TRequest();
+        byte packetId = (byte)instance.PacketID;
 
         handler.Context = _vortexContext;
         handler.Server = _vortexContext.Server;
@@ -87,8 +87,8 @@ public class PacketHandlerService(
     public void RegisterHandler<TRequest>(RoutedPushHandlerBase<TRequest> handler)
         where TRequest : INetPacket, new()
     {
-        var instance = new TRequest();
-        var packetId = (byte)instance.PacketID;
+        TRequest instance = new TRequest();
+        byte packetId = (byte)instance.PacketID;
 
         handler.Context = _vortexContext;
         handler.Server = _vortexContext.Server;
@@ -122,7 +122,7 @@ public class PacketHandlerService(
             var requestType = genericArgs[0];
             var responseType = genericArgs[1];
 
-            var handlerInstance = Activator.CreateInstance(handlerType)!;
+            object handlerInstance = Activator.CreateInstance(handlerType)!;
 
             var method = GetType().GetMethods()
                 .Where(m => m.Name == nameof(RegisterHandler) && m.IsGenericMethod)
@@ -144,7 +144,7 @@ public class PacketHandlerService(
             var requestType = genericArgs[0];
             var responseType = genericArgs[1];
 
-            var handlerInstance = _serviceProvider.GetService(handlerType)
+            object handlerInstance = _serviceProvider.GetService(handlerType)
                 ?? Activator.CreateInstance(handlerType)!;
 
             var method = GetType().GetMethods()
@@ -168,7 +168,7 @@ public class PacketHandlerService(
             var genericArgs = baseType.GetGenericArguments();
             var requestType = genericArgs[0];
 
-            var handlerInstance = _serviceProvider.GetService(handlerType)
+            object handlerInstance = _serviceProvider.GetService(handlerType)
                 ?? Activator.CreateInstance(handlerType)!;
 
             var method = GetType().GetMethods()
@@ -185,7 +185,7 @@ public class PacketHandlerService(
 
     public async Task<IClientPacket?> ProcessAsync(INetPacket packet, PacketRouteContext context)
     {
-        var packetId = (byte)packet.PacketID;
+        byte packetId = (byte)packet.PacketID;
 
         if (_handlers.TryGetValue(packetId, out var handler))
         {

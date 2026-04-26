@@ -58,7 +58,7 @@ public class ListBuilder
 
     public ListBuilder AddItems(IEnumerable<string> items)
     {
-        foreach (var item in items)
+        foreach (string item in items)
         {
             Item.Add(new(item));
         }
@@ -67,7 +67,7 @@ public class ListBuilder
 
     public ListBuilder AddItems(IEnumerable<ListCell> items)
     {
-        foreach (var item in items)
+        foreach (ListCell item in items)
         {
             Item.Add(item);
         }
@@ -236,19 +236,19 @@ public class ListGenerate
 
     public (int[] RowHeigth, int Width) ComputeLayout(ListBuilder builder)
     {
-        var tableFont = ImageUtility.GetFontFamily().CreateFont(FonwSize);
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        Font tableFont = ImageUtility.GetFontFamily().CreateFont(FonwSize);
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         var textOption = new RichTextOptions(tableFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             WrappingLength = textSize.Width * LineMaxTextLength,
             WordBreaking = WordBreaking.BreakAll
         };
-        var RowHeigth = new int[builder.Item.Count];
+        int[] RowHeigth = new int[builder.Item.Count];
         int width = (int)textSize.Width;
-        for (var i = 0; i < builder.Item.Count; i++)
+        for (int i = 0; i < builder.Item.Count; i++)
         {
-            var size = TextMeasurer.MeasureSize(builder.Item[i].Text, textOption);
+            FontRectangle size = TextMeasurer.MeasureSize(builder.Item[i].Text, textOption);
             RowHeigth[i] = (int)size.Height;
             width = (int)Math.Max(MinListWidth, Math.Max(width, size.Width));
         }
@@ -259,16 +259,16 @@ public class ListGenerate
     public byte[] DrawContent(ListBuilder builder)
     {
         using var background = Image.Load<Rgba32>(BackgroundPath);
-        var fontFamily = ImageUtility.GetFontFamily();
-        var tableFont = fontFamily.CreateFont(FonwSize);
-        var titleFont = fontFamily.CreateFont(TitleFontSize);
-        var signFont = fontFamily.CreateFont(SignaturFontSize);
+        FontFamily fontFamily = ImageUtility.GetFontFamily();
+        Font tableFont = fontFamily.CreateFont(FonwSize);
+        Font titleFont = fontFamily.CreateFont(TitleFontSize);
+        Font signFont = fontFamily.CreateFont(SignaturFontSize);
 
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
-        var (RowHeigth, maxWidth) = ComputeLayout(builder);
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        (int[]? RowHeigth, int maxWidth) = ComputeLayout(builder);
         maxWidth += 2 * ListMargin;
-        var maxHeight = RowHeigth.Sum(i => i + 2 * Gap) + ListTopMargin + ListBottomMargin; ;
-        var image = background.Crop(maxWidth + 2 * CardMargin, maxHeight + CardTopMargin + CardBottomMargin);
+        int maxHeight = RowHeigth.Sum(i => i + (2 * Gap)) + ListTopMargin + ListBottomMargin; ;
+        Image<Rgba32> image = background.Crop(maxWidth + (2 * CardMargin), maxHeight + CardTopMargin + CardBottomMargin);
         image.Mutate(d =>
         {
             DrawBackground(d, maxWidth, maxHeight);
@@ -286,7 +286,7 @@ public class ListGenerate
     private void DrawContentText(IImageProcessingContext d, ListBuilder builder, Font tableFont, int maxWidth, int[] rowHeigth)
     {
         int yOffset = CardTopMargin + ListTopMargin;
-        var textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
+        FontRectangle textSize = TextMeasurer.MeasureSize("A", new TextOptions(tableFont));
         for (int i = 0; i < builder.Item.Count; i++)
         {
             var textOption = new RichTextOptions(tableFont)
@@ -295,11 +295,11 @@ public class ListGenerate
                 VerticalAlignment = VerticalAlignment.Center,
                 WrappingLength = textSize.Width * LineMaxTextLength,
                 WordBreaking = WordBreaking.BreakAll,
-                Origin = new PointF(CardMargin + maxWidth / 2, yOffset + rowHeigth[i] / 2 + Gap)
+                Origin = new PointF(CardMargin + (maxWidth / 2), yOffset + (rowHeigth[i] / 2) + Gap)
             };
-            var textColor = builder.Item[i].UseTextColor ? builder.Item[i].TextColor : ListFontColor;
+            Color textColor = builder.Item[i].UseTextColor ? builder.Item[i].TextColor : ListFontColor;
             d.DrawText(textOption, builder.Item[i].Text, textColor);
-            yOffset += rowHeigth[i] + 2 * Gap;
+            yOffset += rowHeigth[i] + (2 * Gap);
         }
     }
 
@@ -308,13 +308,13 @@ public class ListGenerate
         int yOffset = CardTopMargin + ListTopMargin;
         for (int i = 0; i <= builder.Item.Count; i++)
         {
-            d.DrawLine(ListThicknessColor, 1, new PointF(CardMargin + ListMargin, yOffset), new PointF(CardMargin + ListMargin + maxWidth - 2 * ListMargin, yOffset));
+            d.DrawLine(ListThicknessColor, 1, new PointF(CardMargin + ListMargin, yOffset), new PointF(CardMargin + ListMargin + maxWidth - (2 * ListMargin), yOffset));
             if (i < builder.Item.Count)
             {
-                yOffset += RowHeigth[i] + 2 * Gap;
+                yOffset += RowHeigth[i] + (2 * Gap);
             }
         }
-        d.DrawLine(ListThicknessColor, 1, new PointF(CardMargin + ListMargin, CardTopMargin + ListTopMargin + maxHeight - ListTopMargin - ListBottomMargin), new PointF(CardMargin + ListMargin + maxWidth - 2 * ListMargin, CardTopMargin + ListTopMargin + maxHeight - ListTopMargin - ListBottomMargin));
+        d.DrawLine(ListThicknessColor, 1, new PointF(CardMargin + ListMargin, CardTopMargin + ListTopMargin + maxHeight - ListTopMargin - ListBottomMargin), new PointF(CardMargin + ListMargin + maxWidth - (2 * ListMargin), CardTopMargin + ListTopMargin + maxHeight - ListTopMargin - ListBottomMargin));
     }
 
 
@@ -325,8 +325,8 @@ public class ListGenerate
 
     private void DrawTitle(IImageProcessingContext d, Font titleFont, int maxWidth)
     {
-        var titleSize = TextMeasurer.MeasureSize(Title, new TextOptions(titleFont));
-        var titlePosition = new PointF(CardMargin + (maxWidth - titleSize.Width) / 2, CardTopMargin + 30);
+        FontRectangle titleSize = TextMeasurer.MeasureSize(Title, new TextOptions(titleFont));
+        var titlePosition = new PointF(CardMargin + ((maxWidth - titleSize.Width) / 2), CardTopMargin + 30);
         d.DrawText(Title, titleFont, TitleColor, titlePosition);
     }
 
@@ -334,9 +334,9 @@ public class ListGenerate
 
     private void DrawAvatar(IImageProcessingContext d, int maxWidth)
     {
-        var avatarSize = 200;
-        using var avatar = GetAvatar(avatarSize);
-        var avatarPosition = new Point(CardMargin + (maxWidth - avatarSize) / 2, CardTopMargin + 120);
+        int avatarSize = 200;
+        using Image<Rgba32> avatar = GetAvatar(avatarSize);
+        var avatarPosition = new Point(CardMargin + ((maxWidth - avatarSize) / 2), CardTopMargin + 120);
         d.DrawImage(avatar, avatarPosition, 1);
     }
 

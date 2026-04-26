@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace Vortex.Bot.Extension;
 
@@ -11,8 +9,8 @@ public static class IEnumerableExtension
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(separator);
-        var sb = new StringBuilder();
-        using var enumerator = source.GetEnumerator();
+        StringBuilder sb = new StringBuilder();
+        using IEnumerator<T> enumerator = source.GetEnumerator();
         if (enumerator.MoveNext())
         {
             sb.Append(enumerator.Current);
@@ -35,8 +33,8 @@ public static class IEnumerableExtension
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(selector);
         ArgumentNullException.ThrowIfNull(separator);
-        var sb = new StringBuilder();
-        using var enumerator = source.GetEnumerator();
+        StringBuilder sb = new StringBuilder();
+        using IEnumerator<T> enumerator = source.GetEnumerator();
         if (enumerator.MoveNext())
         {
             sb.Append(selector(enumerator.Current));

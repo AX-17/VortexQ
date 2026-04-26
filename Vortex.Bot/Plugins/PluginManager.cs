@@ -1,7 +1,6 @@
-using System.Collections.Concurrent;
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace Vortex.Bot.Plugins;
 
@@ -43,10 +42,10 @@ public sealed class PluginManager : IDisposable
     {
         _logger.LogInformation("Loading plugins...");
 
-        var pluginDirs = Directory.GetDirectories(_pluginsDirectory);
-        var loadedPlugins = new List<(PluginInfo Info, int Order)>();
+        string[] pluginDirs = Directory.GetDirectories(_pluginsDirectory);
+        List<(PluginInfo Info, int Order)> loadedPlugins = new List<(PluginInfo Info, int Order)>();
 
-        foreach (var pluginDir in pluginDirs)
+        foreach (string pluginDir in pluginDirs)
         {
             try
             {
@@ -65,10 +64,10 @@ public sealed class PluginManager : IDisposable
 
     private List<PluginInfo> LoadPluginFromDirectory(string pluginDirectory)
     {
-        var dirName = Path.GetFileName(pluginDirectory);
+        string dirName = Path.GetFileName(pluginDirectory);
         _logger.LogDebug("Loading plugin directory: {Directory}", dirName);
 
-        var loadContext = new PluginLoadContext(pluginDirectory, $"PluginContext_{dirName}_{Guid.NewGuid():N}");
+        PluginLoadContext loadContext = new PluginLoadContext(pluginDirectory, $"PluginContext_{dirName}_{Guid.NewGuid():N}");
         _loadContexts.Add(loadContext);
 
         loadContext.LoadAssemblies();
@@ -80,7 +79,7 @@ public sealed class PluginManager : IDisposable
         }
 
         var plugins = loadContext.CreatePluginInstances(_serviceProvider);
-        var result = new List<PluginInfo>();
+        List<PluginInfo> result = new List<PluginInfo>();
 
         foreach (var plugin in plugins)
         {
@@ -90,14 +89,14 @@ public sealed class PluginManager : IDisposable
                 continue;
             }
 
-            var pluginContext = new PluginContext(
+            PluginContext pluginContext = new PluginContext(
                 _loggerFactory.CreateLogger(plugin.GetType()),
                 _vortexContext,
                 pluginDirectory
             );
 
             plugin.Context = pluginContext;
-            var pluginInfo = new PluginInfo(plugin, pluginDirectory, loadContext);
+            PluginInfo pluginInfo = new PluginInfo(plugin, pluginDirectory, loadContext);
             _plugins[plugin.Name] = pluginInfo;
             result.Add(pluginInfo);
 
@@ -110,7 +109,7 @@ public sealed class PluginManager : IDisposable
 
     private void InitializePlugins(List<(PluginInfo Info, int Order)> plugins)
     {
-        var sortedPlugins = plugins
+        List<PluginInfo> sortedPlugins = plugins
             .OrderBy(static p => p.Order)
             .Select(static p => p.Info)
             .ToList();
@@ -167,7 +166,7 @@ public sealed class PluginManager : IDisposable
             return false;
         }
 
-        var pluginDir = pluginInfo.Directory;
+        string pluginDir = pluginInfo.Directory;
         UnloadPlugin(pluginName);
 
         CollectGarbage();
@@ -200,7 +199,7 @@ public sealed class PluginManager : IDisposable
     {
         _logger.LogInformation("Reloading all plugins...");
 
-        foreach (var pluginName in _plugins.Keys.ToList())
+        foreach (string? pluginName in _plugins.Keys.ToList())
             UnloadPlugin(pluginName);
 
         foreach (var context in _loadContexts)
@@ -228,7 +227,7 @@ public sealed class PluginManager : IDisposable
 
         _logger.LogInformation("Unloading all plugins...");
 
-        foreach (var pluginName in _plugins.Keys.ToList())
+        foreach (string? pluginName in _plugins.Keys.ToList())
             UnloadPlugin(pluginName);
 
         foreach (var context in _loadContexts)

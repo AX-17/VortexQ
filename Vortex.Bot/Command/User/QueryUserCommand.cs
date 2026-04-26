@@ -1,4 +1,5 @@
 using Lagrange.Core.Message.Entities;
+using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
 
@@ -15,7 +16,7 @@ public static class QueryUserCommand
     {
         long userId;
 
-        var mention = args.MessageChain?.OfType<MentionEntity>().FirstOrDefault();
+        MentionEntity? mention = args.MessageChain?.OfType<MentionEntity>().FirstOrDefault();
         if (mention != null)
         {
             userId = mention.Uin;
@@ -34,12 +35,12 @@ public static class QueryUserCommand
             return;
         }
 
-        var account = Account.GetOrDefault(userId);
-        var currency = Currency.Query(userId);
-        var sign = Sign.Query(userId);
+        Account account = Account.GetOrDefault(userId);
+        Currency? currency = Currency.Query(userId);
+        Sign? sign = Sign.Query(userId);
 
         var isSelf = userId == args.SenderUin;
-        var sb = new System.Text.StringBuilder();
+        StringBuilder sb = new System.Text.StringBuilder();
 
         sb.AppendLine(isSelf ? "你的信息:" : $"用户 {userId} 的信息:");
         sb.AppendLine($"QQ: {userId}");

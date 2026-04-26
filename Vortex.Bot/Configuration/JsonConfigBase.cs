@@ -28,29 +28,29 @@ public abstract class JsonConfigBase<T> where T : JsonConfigBase<T>, new()
 
     public void Save(string? path = null)
     {
-        var filePath = path ?? FullPath;
-        var dir = Path.GetDirectoryName(filePath);
+        string filePath = path ?? FullPath;
+        string? dir = Path.GetDirectoryName(filePath);
 
         if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
         {
             System.IO.Directory.CreateDirectory(dir);
         }
 
-        var options = new JsonSerializerOptions
+        JsonSerializerOptions options = new JsonSerializerOptions
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        var json = JsonSerializer.Serialize((T)this, options);
+        string json = JsonSerializer.Serialize((T)this, options);
         File.WriteAllText(filePath, json);
     }
 
     private static T LoadFromFile()
     {
-        var temp = new T();
-        var fullPath = temp.FullPath;
+        T temp = new T();
+        string fullPath = temp.FullPath;
 
         if (!File.Exists(fullPath))
         {
@@ -59,8 +59,8 @@ public abstract class JsonConfigBase<T> where T : JsonConfigBase<T>, new()
             return temp;
         }
 
-        var json = File.ReadAllText(fullPath);
-        var options = new JsonSerializerOptions
+        string json = File.ReadAllText(fullPath);
+        JsonSerializerOptions options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true
