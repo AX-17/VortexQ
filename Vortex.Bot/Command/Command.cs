@@ -60,7 +60,7 @@ internal sealed class Command : CommandBase
         PermissionCheckResult permResult = await CheckPermissionAsync(args);
         if (permResult.Result != PermissionResult.Granted)
         {
-            await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
+            await args.ReplyWithAtAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
             return CreateResult(0);
         }
 
@@ -144,7 +144,7 @@ internal sealed class Command : CommandBase
     private async Task ShowSubCommandsHint(CommandArgs args, string commandName)
     {
         string message = ErrorMessageBuilder.BuildIncompleteCommandHint(this, args, commandName);
-        await args.ReplyAsync(message);
+        await args.ReplyWithAtAsync(message);
     }
 
     public string GetName() => _name;
@@ -205,7 +205,7 @@ internal sealed class Command : CommandBase
             string commandPath = BuildCommandPath(args, current);
             string helpText = BuildHelpText(targetCommand ?? _rootCommand, commandPath);
 
-            await args.ReplyAsync(helpText);
+            await args.ReplyWithAtAsync(helpText);
             return CreateResult(0);
         }
 

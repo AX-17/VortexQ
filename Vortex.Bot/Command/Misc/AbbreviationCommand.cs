@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Vortex.Bot.Attributes;
+using Vortex.Bot.Utility;
 
 namespace Vortex.Bot.Command.Misc;
 
@@ -10,38 +11,36 @@ namespace Vortex.Bot.Command.Misc;
 public static class AbbreviationCommand
 {
     [Main]
-    public static async Task Execute(CommandArgs args)
+    [Flexible]
+    public static async Task Execute(CommandArgs args, [Param("缩写")] string? abbreviation = null)
     {
-        if (args.Params.Count == 0)
+        if (string.IsNullOrEmpty(abbreviation))
         {
-            await args.ReplyAsync("请输入要查询的缩写");
+            await args.ReplyWithAtAsync("请输入要查询的缩写");
             return;
         }
 
-        string text = args.Params[0];
-
         try
         {
-            using HttpClient client = new HttpClient();
-            string url = $"https://oiapi.net/API/Nbnhhsh?text={Uri.EscapeDataString(text)}";
-            string result = await client.GetStringAsync(url);
+            string url = $"https://oiapi.net/API/Nbnhhsh?text={Uri.EscapeDataString(abbreviation)}";
+            var result = await HttpUtility.GetStringAsync(url);
 
             JsonNode? data = JsonNode.Parse(result);
             JsonArray? trans = data?["data"]?[0]?["trans"]?.AsArray();
 
-            if (trans != null && trans.Any())
+            if (trans != null && trans.Count != 0)
             {
                 var meanings = trans.Select(t => t?.ToString()).Where(s => !string.IsNullOrEmpty(s));
-                await args.ReplyAsync($"缩写 `{text}` 可能为:\n{string.Join(", ", meanings)}");
+                await args.ReplyWithAtAsync($"缩写 `{abbreviation}` 可能为:\n{string.Join(", ", meanings)}");
             }
             else
             {
-                await args.ReplyAsync("也许该缩写没有被收录!");
+                await args.ReplyWithAtAsync("也许该缩写没有被收录!");
             }
         }
         catch (Exception ex)
         {
-            await args.ReplyAsync($"查询失败: {ex.Message}");
+            await args.ReplyWithAtAsync($"查询失败: {ex.Message}");
         }
     }
 }

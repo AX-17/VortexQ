@@ -18,13 +18,13 @@ public static class BanPlayerCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -33,11 +33,11 @@ public static class BanPlayerCommand
 
         if (result?.Success == true)
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 已封禁玩家 {playerName}\n原因: {banReason}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 已封禁玩家 {playerName}\n原因: {banReason}");
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 封禁玩家失败: {result?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 封禁玩家失败: {result?.Message ?? "无法连接服务器"}");
         }
     }
 
@@ -47,13 +47,13 @@ public static class BanPlayerCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -61,11 +61,11 @@ public static class BanPlayerCommand
 
         if (result?.Success == true)
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 已解封玩家 {playerName}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 已解封玩家 {playerName}");
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 解封玩家失败: {result?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 解封玩家失败: {result?.Message ?? "无法连接服务器"}");
         }
     }
 }

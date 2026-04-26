@@ -1,6 +1,6 @@
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Currencys;
 
@@ -23,11 +23,11 @@ public static class CurrencyCommand
 
             if (targetUserId.HasValue)
             {
-                await args.ReplyAsync($"用户 {userId} 的金币余额: {balance}");
+                await args.ReplyWithAtAsync($"用户 {userId} 的金币余额: {balance}");
             }
             else
             {
-                await args.ReplyAsync($"你的金币余额: {balance}");
+                await args.ReplyWithAtAsync($"你的金币余额: {balance}");
             }
         }
     }
@@ -43,11 +43,11 @@ public static class CurrencyCommand
             try
             {
                 Currency currency = Currency.Add(userId, amount);
-                await args.ReplyAsync($"已给用户 {userId} 增加 {amount} 金币\n当前余额: {currency.Num}");
+                await args.ReplyWithAtAsync($"已给用户 {userId} 增加 {amount} 金币\n当前余额: {currency.Num}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"操作失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"操作失败: {ex.Message}");
             }
         }
     }
@@ -63,11 +63,11 @@ public static class CurrencyCommand
             try
             {
                 Currency currency = Currency.Deduct(userId, amount);
-                await args.ReplyAsync($"已从用户 {userId} 扣除 {amount} 金币\n当前余额: {currency.Num}");
+                await args.ReplyWithAtAsync($"已从用户 {userId} 扣除 {amount} 金币\n当前余额: {currency.Num}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"操作失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"操作失败: {ex.Message}");
             }
         }
     }
@@ -83,11 +83,11 @@ public static class CurrencyCommand
             try
             {
                 Currency currency = Currency.Set(userId, amount);
-                await args.ReplyAsync($"已设置用户 {userId} 的金币为 {amount}\n当前余额: {currency.Num}");
+                await args.ReplyWithAtAsync($"已设置用户 {userId} 的金币为 {amount}\n当前余额: {currency.Num}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"操作失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"操作失败: {ex.Message}");
             }
         }
     }
@@ -104,18 +104,21 @@ public static class CurrencyCommand
 
             if (topList.Count == 0)
             {
-                await args.ReplyAsync("暂无金币排行榜数据");
+                await args.ReplyWithAtAsync("暂无金币排行榜数据");
                 return;
             }
 
-            StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine($"金币排行榜 (前{topList.Count}名):");
+            var builder = TableBuilder.Create()
+                .SetHeader("排名", "用户", "金币")
+                .SetTitle("金币排行榜")
+                .SetMemberUin(args.SenderUin);
+
             for (int i = 0; i < topList.Count; i++)
             {
-                sb.AppendLine($"{i + 1}. {topList[i].UserId}: {topList[i].Num} 金币");
+                builder.AddRow((i + 1).ToString(), topList[i].UserId.ToString(), topList[i].Num.ToString());
             }
 
-            await args.ReplyAsync(sb.ToString());
+            await args.ReplyImageAsync(builder.Build());
         }
     }
 
@@ -129,24 +132,24 @@ public static class CurrencyCommand
         {
             if (targetUserId == args.SenderUin)
             {
-                await args.ReplyAsync("不能给自己转账!");
+                await args.ReplyWithAtAsync("不能给自己转账!");
                 return;
             }
 
             if (amount <= 0)
             {
-                await args.ReplyAsync("转账金额必须大于0!");
+                await args.ReplyWithAtAsync("转账金额必须大于0!");
                 return;
             }
 
             try
             {
                 Currency.Transfer(args.SenderUin, targetUserId, amount);
-                await args.ReplyAsync($"转账成功!\n已向 {targetUserId} 转账 {amount} 金币");
+                await args.ReplyWithAtAsync($"转账成功!\n已向 {targetUserId} 转账 {amount} 金币");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"转账失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"转账失败: {ex.Message}");
             }
         }
     }

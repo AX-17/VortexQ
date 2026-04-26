@@ -7,7 +7,7 @@ public class CommandUtility
     public static List<string> ParseParameters(string str)
     {
         List<string> ret = [];
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         bool instr = false;
         for (int i = 0; i < str.Length; i++)
         {

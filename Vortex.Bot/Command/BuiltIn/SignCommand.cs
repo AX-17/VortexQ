@@ -19,11 +19,11 @@ public static class SignCommand
             return;
         }
 
-        Random rand = new Random();
+        var rand = new Random();
         var reward = rand.Next(10, 100);
 
-        Sign sign = Sign.DoSignIn(args.SenderUin);
-        Currency currency = Currency.Add(args.SenderUin, reward);
+        var sign = Sign.DoSignIn(args.SenderUin);
+        var currency = Currency.Add(args.SenderUin, reward);
 
         var reply = $"签到成功！\n" +
                     $"QQ: {args.SenderUin}\n" +

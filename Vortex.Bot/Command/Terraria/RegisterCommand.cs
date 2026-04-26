@@ -22,32 +22,32 @@ public static partial class RegisterCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("未切换服务器或服务器无效!\n请先使用 '切换 <服务器名称>' 选择服务器");
+            await args.ReplyWithAtAsync("未切换服务器或服务器无效!\n请先使用 '切换 <服务器名称>' 选择服务器");
             return;
         }
 
         if (characterName.Length > server.Config.RegisterNameMax)
         {
-            await args.ReplyAsync($"注册的人物名称不能大于{server.Config.RegisterNameMax}个字符!");
+            await args.ReplyWithAtAsync($"注册的人物名称不能大于{server.Config.RegisterNameMax}个字符!");
             return;
         }
 
         if (server.Config.RegisterNameLimit && !PlayerNameRegex().IsMatch(characterName))
         {
-            await args.ReplyAsync("注册的人物名称不能包含中文、字母、数字和/:[]以外的字符");
+            await args.ReplyWithAtAsync("注册的人物名称不能包含中文、字母、数字和/:[]以外的字符");
             return;
         }
 
         List<TerrariaUser> existingUsers = TerrariaUser.GetUsersById(args.SenderUin, server.Config.Name);
         if (existingUsers.Count >= server.Config.RegisterMaxCount)
         {
-            await args.ReplyAsync($"同一个服务器上注册账户不能超过{server.Config.RegisterMaxCount}个");
+            await args.ReplyWithAtAsync($"同一个服务器上注册账户不能超过{server.Config.RegisterMaxCount}个");
             return;
         }
 
@@ -71,17 +71,17 @@ public static partial class RegisterCommand
                            $"注册账号: {args.SenderUin}\n" +
                            $"注册密码已发送至您的QQ邮箱\n" +
                            $"进入服务器后可使用 /password [当前密码] [新密码] 修改你的密码";
-                await args.ReplyAsync(reply);
+                await args.ReplyWithAtAsync(reply);
             }
             else
             {
                 TerrariaUser.Remove(server.Config.Name, characterName);
-                await args.ReplyAsync($"服务器注册失败: {result?.Message ?? "无法连接服务器"}");
+                await args.ReplyWithAtAsync($"服务器注册失败: {result?.Message ?? "无法连接服务器"}");
             }
         }
         catch (InvalidOperationException ex)
         {
-            await args.ReplyAsync(ex.Message);
+            await args.ReplyWithAtAsync(ex.Message);
         }
     }
 

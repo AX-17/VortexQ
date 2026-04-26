@@ -53,7 +53,7 @@ public class ProfileItemBuilder
         return this;
     }
 
-    public ProfileItemBuilder SetMemberUin(uint memberUin)
+    public ProfileItemBuilder SetMemberUin(long memberUin)
     {
         Generator.Config.MemberUin = memberUin;
         return this;

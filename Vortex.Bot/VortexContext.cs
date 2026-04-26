@@ -26,9 +26,6 @@ public class VortexContext(
     public CoreConfiguration Configuration { get; } = configuration.Value;
     public SystemMonitor SystemMonitor { get; private set; } = null!;
 
-    /// <summary>
-    /// VortexServer 实例，用于与客户端通信
-    /// </summary>
     public VortexSocketService? Server { get; set; }
 
     public static string Path => Environment.CurrentDirectory;

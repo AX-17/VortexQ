@@ -53,6 +53,8 @@ public abstract class CommandArgs(VortexContext context, List<string> @params, B
 
     public abstract Task ReplyImageAsync(byte[] imageData);
 
+    public abstract Task ReplyWithAtAsync(string message);
+
     public string GetTextContent()
     {
         return MessageChain == null ? string.Empty : string.Join("", MessageChain.OfType<TextEntity>().Select(t => t.Text));
@@ -77,7 +79,7 @@ public class GroupCommandArgs : CommandArgs
 
     public override async Task ReplyAsync(string message)
     {
-        MessageBuilder builder = new MessageBuilder();
+        var builder = new MessageBuilder();
         builder.Text(message);
         await BotContext.SendGroupMessage(GroupUin, builder.Build());
     }
@@ -89,17 +91,17 @@ public class GroupCommandArgs : CommandArgs
 
     public override async Task ReplyImageAsync(byte[] imageData)
     {
-        MessageBuilder builder = new MessageBuilder();
+        var builder = new MessageBuilder();
         builder.Image(imageData);
         await BotContext.SendGroupMessage(GroupUin, builder.Build());
     }
 
-    public async Task ReplyWithAtAsync(string message)
+    public override async Task ReplyWithAtAsync(string message)
     {
-        MessageBuilder builder = new MessageBuilder();
-        builder.Mention(SenderUin, SenderDisplayName ?? "");
-        builder.Text(" " + message);
-        await BotContext.SendGroupMessage(GroupUin, builder.Build());
+        var builder = new MessageBuilder();
+        builder.Reply(Message!);
+        builder.Text(message);
+        await ReplyAsync(builder.Build());
     }
 }
 
@@ -119,7 +121,7 @@ public class PrivateCommandArgs : CommandArgs
 
     public override async Task ReplyAsync(string message)
     {
-        MessageBuilder builder = new MessageBuilder();
+        var builder = new MessageBuilder();
         builder.Text(message);
         await BotContext.SendFriendMessage(FriendUin, builder.Build());
     }
@@ -131,9 +133,17 @@ public class PrivateCommandArgs : CommandArgs
 
     public override async Task ReplyImageAsync(byte[] imageData)
     {
-        MessageBuilder builder = new MessageBuilder();
+        var builder = new MessageBuilder();
         builder.Image(imageData);
         await BotContext.SendFriendMessage(FriendUin, builder.Build());
+    }
+
+    public override async Task ReplyWithAtAsync(string message)
+    {
+        var builder = new MessageBuilder();
+        builder.Reply(Message!);
+        builder.Text(message);
+        await ReplyAsync(builder.Build());
     }
 }
 
@@ -188,5 +198,10 @@ public class ServerCommandArgs : CommandArgs
     public override async Task ReplyImageAsync(byte[] imageData)
     {
 
+    }
+
+    public override async Task ReplyWithAtAsync(string message)
+    {
+        await ReplyAsync(message);
     }
 }

@@ -18,7 +18,7 @@ public static class SystemInfoCommand
 
         ProfileItemBuilder builder = ProfileItemBuilder.Create()
             .SetTitle("系统信息")
-            .SetMemberUin((uint)args.SenderUin)
+            .SetMemberUin(args.SenderUin)
             .AddItem("CPU占用率", $"{monitor.CpuUsagePercent:0.0}%")
             .AddItem("内存占用率", $"{monitor.MemoryUsagePercent:0.0}%")
             .AddItem("总内存", $"{monitor.TotalPhysicalMemory / 1024 / 1024} MB")

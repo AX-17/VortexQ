@@ -1,6 +1,6 @@
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Admin;
 
@@ -21,11 +21,11 @@ public static class GroupAdminCommand
             try
             {
                 Group.Add(groupName);
-                await args.ReplyAsync($"组 {groupName} 添加成功!");
+                await args.ReplyWithAtAsync($"组 {groupName} 添加成功!");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"添加失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"添加失败: {ex.Message}");
             }
         }
     }
@@ -41,11 +41,11 @@ public static class GroupAdminCommand
             try
             {
                 Group.Delete(groupName);
-                await args.ReplyAsync($"组 {groupName} 删除成功!");
+                await args.ReplyWithAtAsync($"组 {groupName} 删除成功!");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"删除失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"删除失败: {ex.Message}");
             }
         }
     }
@@ -61,11 +61,11 @@ public static class GroupAdminCommand
             try
             {
                 Group.AddPermission(groupName, permission);
-                await args.ReplyAsync($"权限 {permission} 已添加到组 {groupName}");
+                await args.ReplyWithAtAsync($"权限 {permission} 已添加到组 {groupName}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"添加权限失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"添加权限失败: {ex.Message}");
             }
         }
     }
@@ -81,11 +81,11 @@ public static class GroupAdminCommand
             try
             {
                 Group.RemovePermission(groupName, permission);
-                await args.ReplyAsync($"权限 {permission} 已从组 {groupName} 删除");
+                await args.ReplyWithAtAsync($"权限 {permission} 已从组 {groupName} 删除");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"删除权限失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"删除权限失败: {ex.Message}");
             }
         }
     }
@@ -101,11 +101,11 @@ public static class GroupAdminCommand
             try
             {
                 Group.SetParent(groupName, parentGroupName);
-                await args.ReplyAsync($"组 {groupName} 的父组已更改为 {parentGroupName}");
+                await args.ReplyWithAtAsync($"组 {groupName} 的父组已更改为 {parentGroupName}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"设置父组失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"设置父组失败: {ex.Message}");
             }
         }
     }
@@ -122,21 +122,25 @@ public static class GroupAdminCommand
 
             if (groups.Count == 0)
             {
-                await args.ReplyAsync("还没有添加任何权限组!");
+                await args.ReplyWithAtAsync("还没有添加任何权限组!");
                 return;
             }
 
-            StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine("权限组列表:");
+            var builder = TableBuilder.Create()
+                .SetHeader("组名", "父组", "权限")
+                .SetTitle("权限组列表")
+                .SetMemberUin(args.SenderUin);
+
             foreach (Group group in groups)
             {
                 var perms = string.Join(", ", group.Permissions);
+                if (string.IsNullOrEmpty(perms))
+                    perms = "无";
                 var parent = string.IsNullOrEmpty(group.Parent?.Name) ? "无" : group.Parent?.Name;
-                sb.AppendLine($"{group.Name} (父组: {parent})");
-                sb.AppendLine($"  权限: {perms}");
+                builder.AddRow(group.Name, parent ?? "无", perms);
             }
 
-            await args.ReplyAsync(sb.ToString());
+            await args.ReplyImageAsync(builder.Build());
         }
     }
 }

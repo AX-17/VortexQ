@@ -1,9 +1,9 @@
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Vortex.Bot.Extension;
-using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace Vortex.Bot.Utility.Images;
 
@@ -26,14 +26,14 @@ public abstract class ImageGeneratorBase
     protected Color FontColor => Config.FontColor;
     protected Color ThicknessColor => Config.ThicknessColor;
     protected string Signature => Config.Signature;
-    protected uint MemberUin => Config.MemberUin;
+    protected long MemberUin => Config.MemberUin;
     protected abstract (int Width, int Height) ComputeLayout();
     protected abstract void DrawContent(IImageProcessingContext ctx, int width, int height);
 
     public virtual byte[] Generate()
     {
         (int width, int height) = ComputeLayout();
-        
+
         using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
         using Image<Rgba32> image = background.Crop(width, height);
 

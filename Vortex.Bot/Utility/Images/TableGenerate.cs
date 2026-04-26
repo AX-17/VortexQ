@@ -96,7 +96,7 @@ public class TableBuilder
         return this;
     }
 
-    public TableBuilder SetMemberUin(uint memberUin)
+    public TableBuilder SetMemberUin(long memberUin)
     {
         Generator.Config.MemberUin = memberUin;
         return this;
@@ -220,7 +220,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
 
         Font tableFont = CreateFont(Config.FontSize);
         FontRectangle textSize = MeasureText("A", tableFont);
-        
+
         var textOption = new RichTextOptions(tableFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -290,12 +290,12 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
     {
         int xOffset = CardMargin + TableMargin;
         FontRectangle textSize = MeasureText("A", tableFont);
-        
+
         for (int j = 0; j < builder.Header.Count; j++)
         {
             TableCell cell = builder.Header[j];
             var cellRect = new RectangleF(xOffset, CardTopMargin + TableTopMargin, _columnWidths[j] + 2 * Gap, _rowHeights[0] + 2 * Gap);
-            
+
             if (cell.UseBackgroundColor)
                 ctx.Fill(cell.BackgroundColor, cellRect);
 
@@ -307,7 +307,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
                 WordBreaking = WordBreaking.BreakAll,
                 Origin = new PointF(xOffset + (_columnWidths[j] / 2) + Gap, CardTopMargin + TableTopMargin + (_rowHeights[0] / 2) + Gap)
             };
-            
+
             ctx.DrawText(textOption, cell.Text, cell.UseTextColor ? cell.TextColor : TableFontColor);
             xOffset += _columnWidths[j] + 2 * Gap;
         }
@@ -317,7 +317,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
     {
         int yOffset = CardTopMargin + TableTopMargin + _rowHeights[0] + 2 * Gap;
         FontRectangle textSize = MeasureText("A", tableFont);
-        
+
         for (int i = 0; i < builder.Rows.Count; i++)
         {
             int xOffset = CardMargin + TableMargin;
@@ -325,7 +325,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
             {
                 TableCell cell = builder.Rows[i].Content[j];
                 var cellRect = new RectangleF(xOffset, yOffset, _columnWidths[j] + 2 * Gap, _rowHeights[i + 1] + 2 * Gap);
-                
+
                 if (cell.UseBackgroundColor)
                     ctx.Fill(cell.BackgroundColor, cellRect);
 
@@ -338,7 +338,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
                     WordBreaking = WordBreaking.BreakAll,
                     Origin = new PointF(xOffset + (_columnWidths[j] / 2) + Gap, textY)
                 };
-                
+
                 ctx.DrawText(textOption, cell.Text, cell.UseTextColor ? cell.TextColor : TableFontColor);
                 xOffset += _columnWidths[j] + 2 * Gap;
             }

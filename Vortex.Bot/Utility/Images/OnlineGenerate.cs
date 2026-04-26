@@ -9,12 +9,12 @@ namespace Vortex.Bot.Utility.Images;
 
 public class OnlineCell
 {
-    public uint Uin { get; set; }
+    public long Uin { get; set; }
     public string Text { get; set; }
     public Color Color { get; set; }
     public bool UseColor { get; set; }
 
-    public OnlineCell(uint uin, string text, Color color)
+    public OnlineCell(long uin, string text, Color color)
     {
         Uin = uin;
         Text = text;
@@ -22,7 +22,7 @@ public class OnlineCell
         UseColor = true;
     }
 
-    public OnlineCell(uint uin, string text)
+    public OnlineCell(long uin, string text)
     {
         Uin = uin;
         Text = text;

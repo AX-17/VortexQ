@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -18,13 +18,13 @@ public static class RegisterListCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("服务器无效或未切换至一个有效服务器!");
+            await args.ReplyWithAtAsync("服务器无效或未切换至一个有效服务器!");
             return;
         }
 
@@ -32,19 +32,20 @@ public static class RegisterListCommand
 
         if (users.Count == 0)
         {
-            await args.ReplyAsync($"你在 {server.Config.Name} 上没有注册任何角色。");
+            await args.ReplyWithAtAsync($"你在 {server.Config.Name} 上没有注册任何角色。");
             return;
         }
 
-        StringBuilder sb = new System.Text.StringBuilder();
-        sb.AppendLine($"[{server.Config.Name}] 你的注册列表:");
+        var builder = ListBuilder.Create()
+            .SetTitle($"[{server.Config.Name}] 注册列表")
+            .SetMemberUin(args.SenderUin);
 
         for (int i = 0; i < users.Count; i++)
         {
             TerrariaUser user = users[i];
-            sb.AppendLine($"{i + 1}. {user.Name} (GroupID: {user.GroupId})");
+            builder.AddItem($"{i + 1}. {user.Name} (GroupID: {user.GroupId})");
         }
 
-        await args.ReplyAsync(sb.ToString());
+        await args.ReplyImageAsync(builder.Build());
     }
 }

@@ -27,6 +27,6 @@ internal static class CommandHelper
         }
 
         string errorMessage = ErrorMessageBuilder.BuildParseError(args, result, commandName);
-        await args.ReplyAsync(errorMessage);
+        await args.ReplyWithAtAsync(errorMessage);
     }
 }

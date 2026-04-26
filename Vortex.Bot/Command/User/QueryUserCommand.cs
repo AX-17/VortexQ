@@ -1,7 +1,8 @@
+using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Message.Entities;
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.User;
 
@@ -13,18 +14,17 @@ public static class QueryUserCommand
 {
     [Main]
     [Flexible]
-    public static async Task Execute(GroupCommandArgs args, [Param("QQ号(可选)")] long targetUserId = 0)
+    public static async Task Execute(GroupCommandArgs args, [Param("QQ号(可选)")] long? targetUserId = null)
     {
         long userId;
-
         MentionEntity? mention = args.MessageChain?.OfType<MentionEntity>().FirstOrDefault();
         if (mention != null)
         {
             userId = mention.Uin;
         }
-        else if (targetUserId != 0)
+        else if (targetUserId.HasValue)
         {
-            userId = targetUserId;
+            userId = targetUserId.Value;
         }
         else if (args.Params.Count == 0)
         {
@@ -32,23 +32,24 @@ public static class QueryUserCommand
         }
         else
         {
-            await args.ReplyAsync("请@要查询的成员或输入QQ号");
+            await args.ReplyWithAtAsync("请@要查询的成员或输入QQ号");
             return;
         }
 
-        Account account = Account.GetOrDefault(userId);
-        Currency? currency = Currency.Query(userId);
-        Sign? sign = Sign.Query(userId);
+        var target = (await args.BotContext.FetchMembers(args.GroupUin)).FirstOrDefault(m => m.Uin == userId);
+        var account = Account.GetOrDefault(userId);
+        var currency = Currency.Query(userId);
+        var sign = Sign.Query(userId);
 
-        var isSelf = userId == args.SenderUin;
-        StringBuilder sb = new System.Text.StringBuilder();
+        var builder = ProfileItemBuilder.Create()
+            .SetMemberUin((uint)userId)
+            .SetTitle("个人信息")
+            .AddItem("QQ", userId.ToString())
+            .AddItem("昵称", target?.Nickname ?? "未知")
+            .AddItem("权限组", account.Group.Name)
+            .AddItem("金币", (currency?.Num ?? 0).ToString())
+            .AddItem("连续签到", $"{sign?.Date ?? 0} 天");
 
-        sb.AppendLine(isSelf ? "你的信息:" : $"用户 {userId} 的信息:");
-        sb.AppendLine($"QQ: {userId}");
-        sb.AppendLine($"权限组: {account.Group.Name}");
-        sb.AppendLine($"金币: {currency?.Num ?? 0}");
-        sb.AppendLine($"连续签到: {sign?.Date ?? 0} 天");
-
-        await args.ReplyAsync(sb.ToString());
+        await args.ReplyImageAsync(builder.Build());
     }
 }

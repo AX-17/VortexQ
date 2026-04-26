@@ -10,10 +10,11 @@ namespace Vortex.Bot.Command.Misc;
 public static class WikiCommand
 {
     [Main]
+    [Flexible]
     public static async Task Execute(CommandArgs args, [Param("搜索内容(可选)")] string? searchTerm = null)
     {
         string baseUrl = "https://terraria.wiki.gg/zh/index.php";
         string url = string.IsNullOrEmpty(searchTerm) ? baseUrl : $"{baseUrl}?search={HttpUtility.UrlEncode(searchTerm)}";
-        await args.ReplyAsync(url);
+        await args.ReplyWithAtAsync(url);
     }
 }

@@ -16,29 +16,29 @@ public static class ServerSwitchCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (args.Params.Count == 0)
         {
-            await args.ReplyAsync("请输入服务器名称!\n用法: 切换 <服务器名称>");
+            await args.ReplyWithAtAsync("请输入服务器名称!\n用法: 切换 <服务器名称>");
             return;
         }
 
         if (!serverManager.TryGetServer(serverName, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync($"未找到服务器: {serverName}");
+            await args.ReplyWithAtAsync($"未找到服务器: {serverName}");
             return;
         }
 
         if (args.GroupUin > 0 && !server.Config.Groups.Contains(args.GroupUin))
         {
-            await args.ReplyAsync("此服务器不属于当前群组!");
+            await args.ReplyWithAtAsync("此服务器不属于当前群组!");
             return;
         }
 
         serverManager.SetUserServer(args.SenderUin, args.GroupUin, serverName);
-        await args.ReplyAsync($"已切换到服务器: {serverName}");
+        await args.ReplyWithAtAsync($"已切换到服务器: {serverName}");
     }
 }

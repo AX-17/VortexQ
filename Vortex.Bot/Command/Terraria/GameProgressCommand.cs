@@ -18,13 +18,13 @@ public static class GameProgressCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -34,7 +34,6 @@ public static class GameProgressCommand
         {
             try
             {
-                // 使用新的图片生成器生成进度图片
                 ProgressBuilder builder = ProgressBuilder.Create()
                     .SetServerName(server.Config.Name)
                     .SetTitle("Boss 击杀进度")
@@ -42,27 +41,9 @@ public static class GameProgressCommand
                     .SetCardSize(260)
                     .SetCardSpacing(25);
 
-                // 添加所有Boss进度
-                foreach (KeyValuePair<string, bool> item in progress.Progress)
+                foreach (var (bossName, isKilled) in progress.Progress)
                 {
-                    string bossName = item.Key;
-                    bool isKilled = item.Value;
-
-                    // 尝试多种图片格式和路径
-                    string[] possiblePaths = new[]
-                    {
-                        $"Resources/Boss/{bossName}.png",
-                        $"Resources/Boss/{bossName}.jpg",
-                        $"Resources/Boss/{bossName}.jpeg",
-                        $"Resources/Terraria/Boss/{bossName}.png",
-                        $"Resources/Terraria/Boss/{bossName}.jpg",
-                    };
-
-                    string? imagePath = possiblePaths.FirstOrDefault(File.Exists);
-
-                    // 如果找不到图片，使用默认路径（生成器会处理缺失情况）
-                    imagePath ??= $"Resources/Boss/{bossName}.png";
-
+                    var imagePath = $"Resources/Boss/{bossName}.jpg";
                     builder.AddBoss(bossName, imagePath, isKilled);
                 }
 
@@ -71,12 +52,12 @@ public static class GameProgressCommand
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"生成进度图片失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"生成进度图片失败: {ex.Message}");
             }
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 获取进度失败: {progress?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 获取进度失败: {progress?.Message ?? "无法连接服务器"}");
         }
     }
 }

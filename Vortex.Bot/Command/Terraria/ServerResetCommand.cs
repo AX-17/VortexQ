@@ -17,13 +17,13 @@ public static class ServerResetCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -42,17 +42,17 @@ public static class ServerResetCommand
             }
         }
 
-        await args.ReplyAsync($"[{server.Config.Name}] 正在重置服务器...");
+        await args.ReplyWithAtAsync($"[{server.Config.Name}] 正在重置服务器...");
 
         ServerResetPacketResponse? result = await server.ResetAsync(resetCommands, startArgs.Trim());
 
         if (result?.Success == true)
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 服务器重置命令已发送，正在处理...");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 服务器重置命令已发送，正在处理...");
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 重置失败: {result?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 重置失败: {result?.Message ?? "无法连接服务器"}");
         }
     }
 }

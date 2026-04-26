@@ -21,13 +21,13 @@ public static class SelfPasswordCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("服务器无效或未切换至一个有效服务器!");
+            await args.ReplyWithAtAsync("服务器无效或未切换至一个有效服务器!");
             return;
         }
 
@@ -35,20 +35,19 @@ public static class SelfPasswordCommand
 
         if (users.Count == 0)
         {
-            await args.ReplyAsync($"{server.Config.Name}上未找到你的注册信息。");
+            await args.ReplyWithAtAsync($"{server.Config.Name}上未找到你的注册信息。");
             return;
         }
 
         MailConfiguration mailConfig = args.Context.Configuration.Mail;
         if (!mailConfig.Enabled)
         {
-            await args.ReplyAsync("邮件服务未启用，无法发送密码。");
+            await args.ReplyWithAtAsync("邮件服务未启用，无法发送密码。");
             return;
         }
 
         try
         {
-            // 构建密码列表HTML
             StringBuilder passwordListHtml = new System.Text.StringBuilder();
             foreach (TerrariaUser user in users)
             {
@@ -80,12 +79,12 @@ public static class SelfPasswordCommand
                 mail.Send();
             });
 
-            await args.ReplyAsync("密码已发送至您的QQ邮箱，请查收！");
+            await args.ReplyWithAtAsync("密码已发送至您的QQ邮箱，请查收！");
         }
         catch (Exception ex)
         {
             args.Logger.LogWarning("发送密码查询邮件失败: {Error}", ex.ToString());
-            await args.ReplyAsync("发送邮件失败，请稍后重试或联系管理员。");
+            await args.ReplyWithAtAsync("发送邮件失败，请稍后重试或联系管理员。");
         }
     }
 }

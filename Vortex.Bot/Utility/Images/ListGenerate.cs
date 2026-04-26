@@ -129,7 +129,7 @@ public class ListBuilder
         return this;
     }
 
-    public ListBuilder SetMemberUin(uint uin)
+    public ListBuilder SetMemberUin(long uin)
     {
         Generator.Config.MemberUin = uin;
         return this;
@@ -208,7 +208,7 @@ public class ListGenerate : ImageGeneratorBase, IImageGenerator<ListBuilder>
 
         Font tableFont = CreateFont(Config.FontSize);
         FontRectangle textSize = MeasureText("A", tableFont);
-        
+
         var textOption = new RichTextOptions(tableFont)
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -218,7 +218,7 @@ public class ListGenerate : ImageGeneratorBase, IImageGenerator<ListBuilder>
 
         int[] rowHeights = new int[_currentBuilder.Items.Count];
         int width = (int)textSize.Width;
-        
+
         for (int i = 0; i < _currentBuilder.Items.Count; i++)
         {
             FontRectangle size = TextMeasurer.MeasureSize(_currentBuilder.Items[i].Text, textOption);
@@ -257,7 +257,7 @@ public class ListGenerate : ImageGeneratorBase, IImageGenerator<ListBuilder>
     {
         int yOffset = CardTopMargin + ListTopMargin;
         FontRectangle textSize = MeasureText("A", tableFont);
-        
+
         for (int i = 0; i < builder.Items.Count; i++)
         {
             var textOption = new RichTextOptions(tableFont)
@@ -268,7 +268,7 @@ public class ListGenerate : ImageGeneratorBase, IImageGenerator<ListBuilder>
                 WordBreaking = WordBreaking.BreakAll,
                 Origin = new PointF(CardMargin + (maxWidth / 2), yOffset + (_rowHeights[i] / 2) + Gap)
             };
-            
+
             Color textColor = builder.Items[i].UseTextColor ? builder.Items[i].TextColor : ListFontColor;
             ctx.DrawText(textOption, builder.Items[i].Text, textColor);
             yOffset += _rowHeights[i] + 2 * Gap;

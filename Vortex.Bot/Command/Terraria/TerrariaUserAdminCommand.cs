@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -23,24 +23,24 @@ public static class TerrariaUserAdminCommand
             TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
             if (serverManager == null)
             {
-                await args.ReplyAsync("服务器管理器未初始化");
+                await args.ReplyWithAtAsync("服务器管理器未初始化");
                 return;
             }
 
             if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
             {
-                await args.ReplyAsync("未切换服务器或服务器无效!");
+                await args.ReplyWithAtAsync("未切换服务器或服务器无效!");
                 return;
             }
 
             try
             {
                 TerrariaUser.Remove(server.Config.Name, characterName);
-                await args.ReplyAsync($"[{server.Config.Name}] 角色 {characterName} 已从数据库移除!");
+                await args.ReplyWithAtAsync($"[{server.Config.Name}] 角色 {characterName} 已从数据库移除!");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"移除失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"移除失败: {ex.Message}");
             }
         }
     }
@@ -56,13 +56,13 @@ public static class TerrariaUserAdminCommand
             TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
             if (serverManager == null)
             {
-                await args.ReplyAsync("服务器管理器未初始化");
+                await args.ReplyWithAtAsync("服务器管理器未初始化");
                 return;
             }
 
             if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
             {
-                await args.ReplyAsync("未切换服务器或服务器无效!");
+                await args.ReplyWithAtAsync("未切换服务器或服务器无效!");
                 return;
             }
 
@@ -70,22 +70,28 @@ public static class TerrariaUserAdminCommand
 
             if (users.Count == 0)
             {
-                await args.ReplyAsync($"[{server.Config.Name}] 暂无注册用户");
+                await args.ReplyWithAtAsync($"[{server.Config.Name}] 暂无注册用户");
                 return;
             }
 
-            StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine($"[{server.Config.Name}] 用户列表:");
-            foreach (TerrariaUser? user in users.Take(20))
+            var builder = ListBuilder.Create()
+                .SetTitle($"[{server.Config.Name}] 用户列表")
+                .SetMemberUin(args.SenderUin);
+
+            int displayCount = Math.Min(users.Count, 20);
+            for (int i = 0; i < displayCount; i++)
             {
-                sb.AppendLine($"ID:{user.Id} 名称:{user.Name} 组ID:{user.GroupId}");
-            }
-            if (users.Count > 20)
-            {
-                sb.AppendLine($"...还有 {users.Count - 20} 个用户");
+                TerrariaUser user = users[i];
+                builder.AddItem($"ID:{user.Id} 名称:{user.Name} 组ID:{user.GroupId}");
             }
 
-            await args.ReplyAsync(sb.ToString());
+            if (users.Count > 20)
+            {
+                builder.AddItem($"");
+                builder.AddItem($"...还有 {users.Count - 20} 个用户");
+            }
+
+            await args.ReplyImageAsync(builder.Build());
         }
     }
 }

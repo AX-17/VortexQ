@@ -39,13 +39,13 @@ public static class CardRenderer
         return y + titleHeight + extraSpacing;
     }
 
-    public static void DrawAvatar(IImageProcessingContext ctx, uint memberUin, int size, int x, int y)
+    public static void DrawAvatar(IImageProcessingContext ctx, long memberUin, int size, int x, int y)
     {
         using Image<Rgba32> avatar = ImageUtility.GetAvatar(memberUin, size);
         ctx.DrawImage(avatar, new Point(x, y), 1f);
     }
 
-    public static void DrawCenteredAvatar(IImageProcessingContext ctx, uint memberUin, int size, int y, int canvasWidth)
+    public static void DrawCenteredAvatar(IImageProcessingContext ctx, long memberUin, int size, int y, int canvasWidth)
     {
         int x = (canvasWidth - size) / 2;
         DrawAvatar(ctx, memberUin, size, x, y);
@@ -138,7 +138,7 @@ public static class CardRenderer
         return TextMeasurer.MeasureSize(text, options);
     }
 
-    public static RichTextOptions CreateTextOptions(Font font, HorizontalAlignment hAlign = HorizontalAlignment.Center, 
+    public static RichTextOptions CreateTextOptions(Font font, HorizontalAlignment hAlign = HorizontalAlignment.Center,
         VerticalAlignment vAlign = VerticalAlignment.Center, int? wrappingLength = null)
     {
         var options = new RichTextOptions(font)
@@ -146,12 +146,12 @@ public static class CardRenderer
             HorizontalAlignment = hAlign,
             VerticalAlignment = vAlign
         };
-        
+
         if (wrappingLength.HasValue)
         {
             options.WrappingLength = wrappingLength.Value;
         }
-        
+
         return options;
     }
 }

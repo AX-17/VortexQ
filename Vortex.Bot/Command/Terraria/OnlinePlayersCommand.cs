@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Core.Service;
-using Vortex.Protocol.Packets;
 
 namespace Vortex.Bot.Command.Terraria;
 
@@ -18,7 +17,7 @@ public static class OnlinePlayersCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
@@ -29,14 +28,14 @@ public static class OnlinePlayersCommand
 
         if (servers.Count == 0)
         {
-            await args.ReplyAsync("此群未配置任何服务器!");
+            await args.ReplyWithAtAsync("此群未配置任何服务器!");
             return;
         }
 
         var sb = new StringBuilder();
         foreach (TerrariaServer? server in servers)
         {
-            ServerOnlinePacketResponse? online = await server.GetOnlinePlayersAsync();
+            var online = await server.GetOnlinePlayersAsync();
             int playerCount = online?.Players?.Count ?? 0;
             int maxCount = online?.MaxCount ?? 0;
 
@@ -56,8 +55,6 @@ public static class OnlinePlayersCommand
             }
             sb.AppendLine();
         }
-        //var msg = BotMessage.CreateCustomGroup(groupId, args.SenderUin, args.Member?.Nickname ?? "", DateTime.Now, MessageBuilder.Create().Text(sb.ToString().Trim()).Build());
-        //await args.ReplyAsync(MessageBuilder.Create().MultiMsg([msg]).Build());
         await args.ReplyAsync(sb.ToString().Trim());
     }
 }

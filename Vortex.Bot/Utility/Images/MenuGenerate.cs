@@ -107,7 +107,7 @@ public class MenuBuilder
 
     public MenuBuilder SetMemberUin(long memberUin)
     {
-        Generator.Config.MemberUin = (uint)memberUin;
+        Generator.Config.MemberUin = memberUin;
         return this;
     }
 
@@ -190,7 +190,6 @@ public class MenuGenerate : ImageGeneratorBase, IImageGenerator<MenuBuilder>
 
         _totalHeight += currentLineHeight;
 
-        // 添加签名的高度
         TextOptions signatureOptions = new TextOptions(signatureFont) { WrappingLength = _totalWidth };
         FontRectangle signatureSize = TextMeasurer.MeasureSize(Config.Signature, signatureOptions);
         _totalHeight += (int)signatureSize.Height + 60;

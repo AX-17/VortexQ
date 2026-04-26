@@ -22,20 +22,20 @@ public static class ResetPasswordCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("服务器无效或未切换至一个有效服务器!");
+            await args.ReplyWithAtAsync("服务器无效或未切换至一个有效服务器!");
             return;
         }
 
         MailConfiguration mailConfig = args.Context.Configuration.Mail;
         if (!mailConfig.Enabled)
         {
-            await args.ReplyAsync("邮件服务未启用，无法重置密码。");
+            await args.ReplyWithAtAsync("邮件服务未启用，无法重置密码。");
             return;
         }
 
@@ -45,7 +45,7 @@ public static class ResetPasswordCommand
 
             if (users.Count == 0)
             {
-                await args.ReplyAsync($"{server.Config.Name}上未找到你的注册信息。");
+                await args.ReplyWithAtAsync($"{server.Config.Name}上未找到你的注册信息。");
                 return;
             }
 
@@ -64,14 +64,14 @@ public static class ResetPasswordCommand
                 }
                 else
                 {
-                    await args.ReplyAsync($"无法连接到服务器更改密码: {result?.Message ?? "未知错误"}");
+                    await args.ReplyWithAtAsync($"无法连接到服务器更改密码: {result?.Message ?? "未知错误"}");
                     return;
                 }
             }
 
             try
             {
-                StringBuilder passwordListHtml = new StringBuilder();
+                var passwordListHtml = new StringBuilder();
                 foreach ((string? characterName, string? newPassword) in resetResults)
                 {
                     passwordListHtml.AppendLine("<tr>");
@@ -102,17 +102,17 @@ public static class ResetPasswordCommand
                     mail.Send();
                 });
 
-                await args.ReplyAsync($"[{server.Config.Name}] 密码重置成功！新密码已发送至您的QQ邮箱，请查收！");
+                await args.ReplyWithAtAsync($"[{server.Config.Name}] 密码重置成功！新密码已发送至您的QQ邮箱，请查收！");
             }
             catch (Exception ex)
             {
                 args.Logger.LogWarning("发送密码重置邮件失败: {Error}", ex.ToString());
-                await args.ReplyAsync("密码已重置，但发送邮件失败，请联系管理员获取新密码。");
+                await args.ReplyWithAtAsync("密码已重置，但发送邮件失败，请联系管理员获取新密码。");
             }
         }
         catch (Exception ex)
         {
-            await args.ReplyAsync($"重置密码失败: {ex.Message}");
+            await args.ReplyWithAtAsync($"重置密码失败: {ex.Message}");
         }
     }
 }

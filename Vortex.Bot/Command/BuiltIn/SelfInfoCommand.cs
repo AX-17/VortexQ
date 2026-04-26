@@ -13,11 +13,11 @@ public static class SelfInfoCommand
     [Main]
     public static async Task ShowInfo(GroupCommandArgs args)
     {
-        Currency? currency = Currency.Query(args.SenderUin);
-        Sign? sign = Sign.Query(args.SenderUin);
+        var currency = Currency.Query(args.SenderUin);
+        var sign = Sign.Query(args.SenderUin);
 
-        ProfileItemBuilder builder = ProfileItemBuilder.Create()
-            .SetMemberUin((uint)args.SenderUin)
+        var builder = ProfileItemBuilder.Create()
+            .SetMemberUin(args.SenderUin)
             .SetTitle("个人信息")
             .AddItem("QQ", args.SenderUin.ToString())
             .AddItem("昵称", args.SenderDisplayName ?? "未知")
@@ -32,11 +32,11 @@ public static class SelfInfoCommand
     [Main]
     public static async Task ShowInfo(PrivateCommandArgs args)
     {
-        Currency? currency = Currency.Query(args.SenderUin);
-        Sign? sign = Sign.Query(args.SenderUin);
+        var currency = Currency.Query(args.SenderUin);
+        var sign = Sign.Query(args.SenderUin);
 
-        ProfileItemBuilder builder = ProfileItemBuilder.Create()
-            .SetMemberUin((uint)args.SenderUin)
+        var builder = ProfileItemBuilder.Create()
+            .SetMemberUin(args.SenderUin)
             .SetTitle("个人信息")
             .AddItem("QQ", args.SenderUin.ToString())
             .AddItem("昵称", args.FriendNickname ?? "未知")

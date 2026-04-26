@@ -1,17 +1,17 @@
-using System.Text;
 using Vortex.Bot.Attributes;
 using Vortex.Bot.Database.Models;
+using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Admin;
 
 [Command("account", "账户")]
 [HelpText("管理用户账户")]
-[CommandType(CommandType.Group | CommandType.Friend)]
+[CommandType(CommandType.Group)]
 [Permission("vortex.admin.account")]
 public static class AccountAdminCommand
 {
     [Command("add", "添加")]
-    [CommandType(CommandType.Group | CommandType.Friend)]
+    [CommandType(CommandType.Group)]
     [Permission("vortex.admin.account.add")]
     public static class AddCmd
     {
@@ -21,17 +21,17 @@ public static class AccountAdminCommand
             try
             {
                 Account.Add(userId, groupName);
-                await args.ReplyAsync($"账户 {userId} 已添加到组 {groupName}");
+                await args.ReplyWithAtAsync($"账户 {userId} 已添加到组 {groupName}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"添加失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"添加失败: {ex.Message}");
             }
         }
     }
 
     [Command("del", "删除")]
-    [CommandType(CommandType.Group | CommandType.Friend)]
+    [CommandType(CommandType.Group)]
     [Permission("vortex.admin.account.del")]
     public static class DelCmd
     {
@@ -41,17 +41,17 @@ public static class AccountAdminCommand
             try
             {
                 Account.Delete(userId);
-                await args.ReplyAsync($"账户 {userId} 删除成功!");
+                await args.ReplyWithAtAsync($"账户 {userId} 删除成功!");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"删除失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"删除失败: {ex.Message}");
             }
         }
     }
 
     [Command("group", "组")]
-    [CommandType(CommandType.Group | CommandType.Friend)]
+    [CommandType(CommandType.Group)]
     [Permission("vortex.admin.account.group")]
     public static class GroupCmd
     {
@@ -61,17 +61,17 @@ public static class AccountAdminCommand
             try
             {
                 Account.SetGroup(userId, groupName);
-                await args.ReplyAsync($"账户 {userId} 的组已更改为 {groupName}");
+                await args.ReplyWithAtAsync($"账户 {userId} 的组已更改为 {groupName}");
             }
             catch (Exception ex)
             {
-                await args.ReplyAsync($"更改失败: {ex.Message}");
+                await args.ReplyWithAtAsync($"更改失败: {ex.Message}");
             }
         }
     }
 
     [Command("list", "列表")]
-    [CommandType(CommandType.Group | CommandType.Friend)]
+    [CommandType(CommandType.Group)]
     [Permission("vortex.admin.account.list")]
     public static class ListCmd
     {
@@ -82,18 +82,21 @@ public static class AccountAdminCommand
 
             if (accounts.Count == 0)
             {
-                await args.ReplyAsync("当前没有任何账户!");
+                await args.ReplyWithAtAsync("当前没有任何账户!");
                 return;
             }
 
-            StringBuilder sb = new System.Text.StringBuilder();
-            sb.AppendLine("账户列表:");
+            var builder = TableBuilder.Create()
+                .SetHeader("QQ号", "权限组")
+                .SetTitle("账户列表")
+                .SetMemberUin(args.SenderUin);
+
             foreach (Account account in accounts)
             {
-                sb.AppendLine($"{account.UserId} -> {account.GroupName}");
+                builder.AddRow(account.UserId.ToString(), account.GroupName);
             }
 
-            await args.ReplyAsync(sb.ToString());
+            await args.ReplyImageAsync(builder.Build());
         }
     }
 }

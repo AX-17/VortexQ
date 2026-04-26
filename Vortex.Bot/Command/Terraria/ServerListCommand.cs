@@ -18,7 +18,7 @@ public static class ServerListCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
@@ -28,14 +28,14 @@ public static class ServerListCommand
 
         if (servers.Count == 0)
         {
-            await args.ReplyAsync("此群未配置任何服务器!");
+            await args.ReplyWithAtAsync("此群未配置任何服务器!");
             return;
         }
 
         TableBuilder tableBuilder = new TableBuilder()
             .SetHeader("服务器名称", "IP", "端口", "版本", "说明", "状态", "世界", "种子", "大小")
             .SetTitle("服务器列表")
-            .SetMemberUin((uint)args.SenderUin);
+            .SetMemberUin(args.SenderUin);
 
         foreach (TerrariaServer? server in servers)
         {

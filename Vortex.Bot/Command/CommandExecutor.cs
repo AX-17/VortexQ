@@ -79,7 +79,7 @@ internal sealed class CommandExecutor : CommandBase
         PermissionCheckResult permResult = await CheckPermissionAsync(args);
         if (permResult.Result != PermissionResult.Granted)
         {
-            await args.ReplyAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
+            await args.ReplyWithAtAsync(permResult.DenyMessage ?? "你没有权限执行此指令。");
             return CreateResult(0);
         }
 

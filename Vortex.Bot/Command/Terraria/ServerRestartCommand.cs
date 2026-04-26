@@ -17,13 +17,13 @@ public static class ServerRestartCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -32,11 +32,11 @@ public static class ServerRestartCommand
 
         if (result?.Success == true)
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 正在重启服务器，请稍后...");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 正在重启服务器，请稍后...");
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 重启失败: {result?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 重启失败: {result?.Message ?? "无法连接服务器"}");
         }
     }
 }

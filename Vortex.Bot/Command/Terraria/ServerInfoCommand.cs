@@ -19,13 +19,13 @@ public static class ServerInfoCommand
         TerrariaServerService? serverManager = args.Context.Server?.Services.GetService<TerrariaServerService>();
         if (serverManager == null)
         {
-            await args.ReplyAsync("服务器管理器未初始化");
+            await args.ReplyWithAtAsync("服务器管理器未初始化");
             return;
         }
 
         if (!serverManager.TryGetUserServer(args.SenderUin, args.GroupUin, out TerrariaServer? server) || server == null)
         {
-            await args.ReplyAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
+            await args.ReplyWithAtAsync("请先使用 '切换 <名称>' 选择要操作的服务器!");
             return;
         }
 
@@ -36,7 +36,7 @@ public static class ServerInfoCommand
             TableBuilder tableBuilder = new TableBuilder()
                 .SetHeader("插件名称", "说明", "作者")
                 .SetTitle($"{server.Config.Name} 插件列表")
-                .SetMemberUin((uint)args.SenderUin);
+                .SetMemberUin(args.SenderUin);
 
             if (status.Plugins != null)
             {
@@ -54,7 +54,7 @@ public static class ServerInfoCommand
         }
         else
         {
-            await args.ReplyAsync($"[{server.Config.Name}] 获取信息失败: {status?.Message ?? "无法连接服务器"}");
+            await args.ReplyWithAtAsync($"[{server.Config.Name}] 获取信息失败: {status?.Message ?? "无法连接服务器"}");
         }
     }
 }

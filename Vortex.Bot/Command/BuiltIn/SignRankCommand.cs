@@ -16,18 +16,18 @@ public static class SignRankCommand
     {
         try
         {
-            List<Sign> signs = Sign.GetAll()
+            var signs = Sign.GetAll()
                 .OrderByDescending(x => x.Date)
                 .Take(10)
                 .ToList();
 
-            TableBuilder builder = TableBuilder.Create()
+            var builder = TableBuilder.Create()
                 .SetHeader("排名", "账号", "累计天数")
                 .SetTitle("签到排行")
-                .SetMemberUin((uint)args.SenderUin);
+                .SetMemberUin(args.SenderUin);
 
             int i = 1;
-            foreach (Sign sign in signs)
+            foreach (var sign in signs)
             {
                 builder.AddRow(i.ToString(), sign.UserId.ToString(), sign.Date.ToString());
                 i++;
@@ -38,7 +38,7 @@ public static class SignRankCommand
         }
         catch (Exception e)
         {
-            await args.ReplyAsync($"获取签到排行失败: {e.Message}");
+            await args.ReplyWithAtAsync($"获取签到排行失败: {e.Message}");
         }
     }
 }
