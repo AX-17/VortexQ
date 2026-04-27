@@ -220,7 +220,7 @@ public class OnlineGenerate : ImageGeneratorBase, IImageGenerator<OnlineBuilder>
             OnlineContent content = _currentBuilder.Contents[i];
             int contentHeight = _contentHeights[i];
 
-            ctx.DrawRoundedRectangle(Config.CardMargin, yOffset, width - (Config.CardMargin * 2), contentHeight, 60, Config.CardBackgroundColor);
+            DrawCardBackgroundWithGlassEffect(ctx, Config.CardMargin, (int)yOffset, width - (Config.CardMargin * 2), contentHeight);
 
             yOffset += TilePadding;
 

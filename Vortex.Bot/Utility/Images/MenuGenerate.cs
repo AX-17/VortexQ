@@ -209,7 +209,7 @@ public class MenuGenerate : ImageGeneratorBase, IImageGenerator<MenuBuilder>
         int currentLineHeight = 0;
         int cellCountInLine = 0;
 
-        ctx.DrawRoundedRectangle(CardPadding, CardTopPadding, width - (2 * CardPadding), height - (CardTopPadding * 2), 60, Config.CardBackgroundColor);
+        DrawCardBackgroundWithGlassEffect(ctx, CardPadding, CardTopPadding, width - (2 * CardPadding), height - (CardTopPadding * 2));
         DrawCenteredAvatar(ctx, AvatarTop + CardTopPadding, width);
 
         foreach (MenuCell cell in _currentBuilder.MenuCells)

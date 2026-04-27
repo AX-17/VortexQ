@@ -30,16 +30,31 @@ public abstract class ImageGeneratorBase
     protected abstract (int Width, int Height) ComputeLayout();
     protected abstract void DrawContent(IImageProcessingContext ctx, int width, int height);
 
+    protected Image<Rgba32>? _backgroundImage;
+
     public virtual byte[] Generate()
     {
         (int width, int height) = ComputeLayout();
 
         using Image<Rgba32> background = Image.Load<Rgba32>(BackgroundPath);
-        using Image<Rgba32> image = background.Crop(width, height);
+        _backgroundImage = background.Crop(width, height);
 
-        image.Mutate(ctx => DrawContent(ctx, width, height));
+        _backgroundImage.Mutate(ctx => DrawContent(ctx, width, height));
 
-        return image.ToBytesAsync().Result;
+        byte[] result = _backgroundImage.ToBytesAsync().Result;
+        _backgroundImage = null;
+        return result;
+    }
+
+    protected void DrawCardBackgroundWithGlassEffect(IImageProcessingContext ctx, int x, int y, int width, int height, byte? opacity = null)
+    {
+        if (_backgroundImage == null) return;
+        Rgba32 bgColor = CardBackgroundColor.ToPixel<Rgba32>();
+        if (opacity.HasValue)
+        {
+            bgColor.A = opacity.Value;
+        }
+        CardRenderer.DrawRoundedCardWithBlur(ctx, _backgroundImage, x, y, width, height, CardCornerRadius, new Color(bgColor));
     }
 
     protected Font CreateFont(float size, FontStyle style = FontStyle.Regular)

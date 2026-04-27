@@ -14,6 +14,25 @@ public static class CardRenderer
         ctx.DrawRoundedRectangle(x, y, width, height, cornerRadius, color);
     }
 
+    public static void DrawRoundedCardWithBlur(IImageProcessingContext ctx, Image<Rgba32> backgroundImage, int x, int y, int width, int height, float cornerRadius, Color color, float blurAmount = 8f)
+    {
+        // 创建卡片区域的模糊副本
+        Rectangle cropRect = new Rectangle(x, y, width, height);
+        using Image<Rgba32> cardBlur = backgroundImage.Clone(img => img.Crop(cropRect).GaussianBlur(blurAmount));
+
+        // 绘制模糊后的背景到卡片区域
+        ctx.DrawImage(cardBlur, new Point(x, y), 1f);
+
+        // 添加半透明白色覆盖层增强玻璃效果 - 使用更高的透明度让卡片更白
+        Rgba32 originalColor = color.ToPixel<Rgba32>();
+        byte alpha = originalColor.A > 0 ? originalColor.A : (byte)200;
+        var glassOverlay = new Color(new Rgba32(255, 255, 255, (byte)(alpha * 0.7 + 50)));
+        ctx.DrawRoundedRectangle(x, y, width, height, cornerRadius, glassOverlay);
+
+        // 添加高光边框
+        ctx.DrawRoundedRectanglePath(x, y, width, height, cornerRadius, 1, new Color(new Rgba32(255, 255, 255, 120)));
+    }
+
     public static void DrawTitle(IImageProcessingContext ctx, string title, Font font, int x, int y, int maxWidth, Color color)
     {
         if (string.IsNullOrEmpty(title)) return;

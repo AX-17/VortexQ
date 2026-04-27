@@ -276,7 +276,7 @@ public class TableGenerate : ImageGeneratorBase, IImageGenerator<TableBuilder>
         int contentWidth = width - 2 * CardMargin;
         int contentHeight = height - CardTopMargin - CardBottomMargin;
 
-        DrawCardBackground(ctx, CardMargin, CardTopMargin, contentWidth, contentHeight);
+        DrawCardBackgroundWithGlassEffect(ctx, CardMargin, CardTopMargin, contentWidth, contentHeight);
         DrawTitle(ctx, Config.Title, titleFont, CardMargin, CardTopMargin + 30, contentWidth);
         DrawCenteredAvatar(ctx, CardTopMargin + 120, width, 200);
         DrawHeaderText(ctx, _currentBuilder, tableFont);

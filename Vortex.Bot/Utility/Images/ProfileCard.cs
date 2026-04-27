@@ -1,6 +1,5 @@
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -220,8 +219,8 @@ public class ProfileCard : ImageGeneratorBase, IImageGenerator<ProfileItemBuilde
     {
         if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
 
-        Font titleFont = CreateFont(Config.TitleFontSize, FontStyle.Bold);
-        Font normalFont = CreateFont(NormalFontSize);
+        var titleFont = CreateFont(Config.TitleFontSize, FontStyle.Bold);
+        var normalFont = CreateFont(NormalFontSize);
 
         int titleHeight = !string.IsNullOrEmpty(Config.Title) ?
             (int)TextMeasurer.MeasureSize(Config.Title, new TextOptions(titleFont)).Height + 30 : 0;
@@ -245,11 +244,11 @@ public class ProfileCard : ImageGeneratorBase, IImageGenerator<ProfileItemBuilde
     {
         if (_currentBuilder == null) throw new InvalidOperationException("Builder not set");
 
-        Font titleFont = CreateFont(Config.TitleFontSize, FontStyle.Bold);
-        Font normalFont = CreateFont(NormalFontSize);
-        Font smallFont = CreateFont(Config.SignatureFontSize);
+        var titleFont = CreateFont(Config.TitleFontSize, FontStyle.Bold);
+        var normalFont = CreateFont(NormalFontSize);
+        var smallFont = CreateFont(Config.SignatureFontSize);
 
-        ctx.DrawRoundedRectangle(_cardX, _cardY, CardWidth, _cardHeight, Config.CardCornerRadius, new Rgba32(255, 255, 255, CardOpacity));
+        DrawCardBackgroundWithGlassEffect(ctx, _cardX, _cardY, CardWidth, _cardHeight, CardOpacity);
 
         int currentY = _cardY + Config.ContentTopMargin;
 
@@ -283,7 +282,7 @@ public class ProfileCard : ImageGeneratorBase, IImageGenerator<ProfileItemBuilde
 
         foreach (ProfileItem item in _currentBuilder.Items)
         {
-            RichTextOptions labelOptions = new RichTextOptions(normalFont)
+            var labelOptions = new RichTextOptions(normalFont)
             {
                 Origin = new PointF(leftMargin, currentY),
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -291,34 +290,21 @@ public class ProfileCard : ImageGeneratorBase, IImageGenerator<ProfileItemBuilde
             ctx.DrawText(labelOptions, item.Label, item.LabelColor);
 
             FontRectangle valueTextSize = TextMeasurer.MeasureSize(item.Value, new TextOptions(normalFont));
-            int paddingX = 15;
-            int paddingY = 5;
+            int paddingX = 16;
+            int paddingY = 6;
 
             float backgroundWidth = valueTextSize.Width + (paddingX * 2);
             float backgroundHeight = valueTextSize.Height + (paddingY * 2);
 
-            float valueTextX = rightMargin - backgroundWidth + paddingX;
-            float valueTextY = currentY;
+            float bgX = rightMargin - backgroundWidth;
+            float bgY = currentY - paddingY;
 
-            if (item.UseEllipseBackground)
-            {
-                float ellipseCenterX = rightMargin - (backgroundWidth / 2);
-                float ellipseCenterY = currentY + (valueTextSize.Height / 2);
+            float valueTextX = bgX + paddingX;
+            float valueTextY = bgY + paddingY;
 
-                EllipsePolygon ellipse = new EllipsePolygon(ellipseCenterX, ellipseCenterY, backgroundWidth / 2, backgroundHeight / 2);
-                ctx.Fill(item.ValueBackgroundColor, ellipse);
-            }
-            else
-            {
-                ctx.Fill(item.ValueBackgroundColor, new RectangleF(
-                    rightMargin - backgroundWidth,
-                    currentY,
-                    backgroundWidth,
-                    backgroundHeight
-                ));
-            }
+            DrawValueBackgroundWithGlassEffect(ctx, (int)bgX, (int)bgY, (int)backgroundWidth, (int)backgroundHeight, item.UseEllipseBackground);
 
-            RichTextOptions valueTextOptions = new RichTextOptions(normalFont)
+            var valueTextOptions = new RichTextOptions(normalFont)
             {
                 Origin = new PointF(valueTextX, valueTextY),
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -329,5 +315,29 @@ public class ProfileCard : ImageGeneratorBase, IImageGenerator<ProfileItemBuilde
         }
 
         return currentY;
+    }
+
+    private void DrawValueBackgroundWithGlassEffect(IImageProcessingContext ctx, int x, int y, int width, int height, bool useEllipse)
+    {
+        if (_backgroundImage != null)
+        {
+            var cropRect = new Rectangle(x, y, width, height);
+            using Image<Rgba32> bgBlur = _backgroundImage.Clone(img => img.Crop(cropRect).GaussianBlur(6));
+            ctx.DrawImage(bgBlur, new Point(x, y), 1f);
+        }
+
+        var glassOverlay = new Color(new Rgba32(255, 255, 255, 50));
+        float cornerRadius = useEllipse ? height / 2f : 6f;
+
+        if (useEllipse)
+        {
+            ctx.DrawRoundedRectangle(x, y, width, height, cornerRadius, glassOverlay);
+            ctx.DrawRoundedRectanglePath(x, y, width, height, cornerRadius, 1, new Color(new Rgba32(255, 255, 255, 50)));
+        }
+        else
+        {
+            ctx.DrawRoundedRectangle(x, y, width, height, cornerRadius, glassOverlay);
+            ctx.DrawRoundedRectanglePath(x, y, width, height, cornerRadius, 1, new Color(new Rgba32(255, 255, 255, 50)));
+        }
     }
 }

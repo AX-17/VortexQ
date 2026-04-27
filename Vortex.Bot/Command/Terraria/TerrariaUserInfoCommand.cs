@@ -44,6 +44,8 @@ public static class TerrariaUserInfoCommand
             var builder = ProfileItemBuilder.Create()
                 .SetTitle($"[{server.Config.Name}] 玩家信息")
                 .SetMemberUin(args.SenderUin)
+                .SetAvatarSize(150)
+                .SetTitleFontSize(50)
                 .AddItem("角色名", account.Name)
                 .AddItem("ID", account.ID.ToString())
                 .AddItem("权限组", account.Group)

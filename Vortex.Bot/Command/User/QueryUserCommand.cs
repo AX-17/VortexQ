@@ -42,7 +42,9 @@ public static class QueryUserCommand
         var sign = Sign.Query(userId);
 
         var builder = ProfileItemBuilder.Create()
-            .SetMemberUin((uint)userId)
+            .SetMemberUin(userId)
+            .SetAvatarSize(150)
+            .SetTitleFontSize(50)
             .SetTitle("个人信息")
             .AddItem("QQ", userId.ToString())
             .AddItem("昵称", target?.Nickname ?? "未知")

@@ -245,13 +245,15 @@ public class ListGenerate : ImageGeneratorBase, IImageGenerator<ListBuilder>
         int contentWidth = width - 2 * CardMargin;
         int contentHeight = height - CardTopMargin - CardBottomMargin;
 
-        DrawCardBackground(ctx, CardMargin, CardTopMargin, contentWidth, contentHeight);
+        DrawCardBackgroundWithGlassEffect(ctx, CardMargin, CardTopMargin, contentWidth, contentHeight);
         DrawTitle(ctx, Config.Title, titleFont, CardMargin, CardTopMargin + 30, contentWidth);
         DrawCenteredAvatar(ctx, CardTopMargin + 120, width, 200);
         DrawContentText(ctx, _currentBuilder, tableFont, contentWidth);
         DrawHorizontalLines(ctx, _currentBuilder, contentWidth, contentHeight);
         DrawSignature(ctx, signFont, CardMargin, CardTopMargin + ListTopMargin + contentHeight - ListTopMargin - ListBottomMargin + 40, contentWidth);
     }
+
+
 
     private void DrawContentText(IImageProcessingContext ctx, ListBuilder builder, Font tableFont, int maxWidth)
     {
