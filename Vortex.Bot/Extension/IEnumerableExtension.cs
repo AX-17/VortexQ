@@ -46,4 +46,11 @@ public static class IEnumerableExtension
         }
         return sb.ToString();
     }
+
+    public static Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(action);
+        return Task.WhenAll(source.Select(action));
+    }
 }

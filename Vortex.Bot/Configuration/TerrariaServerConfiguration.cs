@@ -2,7 +2,7 @@ namespace Vortex.Bot.Configuration;
 
 public class TerrariaServerEnity
 {
-    public string Name { get; set; } = "服务器1";
+    public string Name { get; set; } = "";
     public string IP { get; set; } = "";
     public ushort Port { get; set; } = 7777;
     public ushort DisplayPort { get; set; } = 7777;
@@ -18,7 +18,6 @@ public class TerrariaServerEnity
     public string Describe { get; set; } = "正常玩法服务器";
     public string Version { get; set; } = "1.4.4.9";
     public List<long> Groups { get; set; } = [];
-    public List<long> ForwardGroups { get; set; } = [];
 }
 
 public class TerrariaServerCollection

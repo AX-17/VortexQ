@@ -32,6 +32,6 @@ public abstract class RoutedPushHandlerBase<TRequest>(
     protected TerrariaServer? GetServer(string name)
         => ServerService?.GetServer(name);
 
-    protected void SendGroupMessage(long groupId, Lagrange.Core.Message.MessageChain message)
+    protected Task SendGroupMessage(long groupId, Lagrange.Core.Message.MessageChain message)
         => BotContext.SendGroupMessage(groupId, message);
 }

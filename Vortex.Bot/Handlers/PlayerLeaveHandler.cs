@@ -1,6 +1,8 @@
 using Lagrange.Core;
 using Lagrange.Core.Message;
 using Vortex.Bot.Core.Service;
+using Vortex.Bot.Database.Models;
+using Vortex.Bot.Extension;
 using Vortex.Bot.Models;
 using Vortex.Bot.Processing;
 using Vortex.Protocol.Packets;
@@ -19,13 +21,6 @@ public class PlayerLeaveHandler(
         var message = new MessageBuilder()
             .Text($"[{context.ClientName}] 玩家 {packet.Player.Name} 离开服务器")
             .Build();
-
-        if (context.Server?.Config.ForwardGroups != null)
-        {
-            foreach (var groupId in context.Server.Config.ForwardGroups)
-            {
-                SendGroupMessage(groupId, message);
-            }
-        }
+        GroupForwardMessage.GetByServerName(context.Server?.Config.Name!).ForEachAsync(group => SendGroupMessage(group.GroupUin, message));
     }
 }
