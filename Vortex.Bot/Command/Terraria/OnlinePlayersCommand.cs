@@ -10,6 +10,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看在线玩家")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.online")]
+[DefaultCommand]
 public static class OnlinePlayersCommand
 {
     [Main]

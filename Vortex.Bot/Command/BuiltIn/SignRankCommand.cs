@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.BuiltIn;
 [HelpText("查看签到排行榜")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.sign.rank")]
+[DefaultCommand]
 public static class SignRankCommand
 {
     [Main]

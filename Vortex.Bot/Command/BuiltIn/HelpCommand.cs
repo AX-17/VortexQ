@@ -7,6 +7,7 @@ namespace Vortex.Bot.Command.BuiltIn;
 [HelpText("显示帮助菜单")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.help")]
+[DefaultCommand]
 public static class HelpCommand
 {
     [Main]

@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看玩家详细信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.userinfo")]
+[DefaultCommand]
 public static class TerrariaUserInfoCommand
 {
     [Main]

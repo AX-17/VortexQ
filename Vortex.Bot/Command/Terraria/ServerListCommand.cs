@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看所有服务器列表")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.list")]
+[DefaultCommand]
 public static class ServerListCommand
 {
     [Main]

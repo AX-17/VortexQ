@@ -7,6 +7,7 @@ namespace Vortex.Bot.Command.Misc;
 [HelpText("泰拉瑞亚Wiki搜索")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.misc.wiki")]
+[DefaultCommand]
 public static class WikiCommand
 {
     [Main]

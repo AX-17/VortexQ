@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看游戏进度")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.progress")]
+[DefaultCommand]
 public static class GameProgressCommand
 {
     [Main]

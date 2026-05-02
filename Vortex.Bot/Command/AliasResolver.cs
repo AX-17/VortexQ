@@ -7,7 +7,8 @@ internal static class AliasResolver
 {
     public static IEnumerable<string> GetAliases(MemberInfo member)
     {
-        var commandAttr = member.GetCustomAttribute<CommandAttribute>();
+        var commandAttrs = member.GetCustomAttributes<CommandAttribute>();
+        var commandAttr = commandAttrs.FirstOrDefault();
         if (commandAttr != null && commandAttr.Alias.Count > 0)
         {
             foreach (string alias in commandAttr.Alias)

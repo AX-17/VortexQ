@@ -1,5 +1,5 @@
 using Vortex.Bot.Attributes;
-using Vortex.Bot.Database.Models;
+using Vortex.Bot.Models;
 using Vortex.Bot.Utility.Images;
 
 namespace Vortex.Bot.Command.Admin;
@@ -20,7 +20,7 @@ public static class GroupAdminCommand
         {
             try
             {
-                Group.Add(groupName);
+                GroupRepository.Create(groupName);
                 await args.ReplyWithAtAsync($"组 {groupName} 添加成功!");
             }
             catch (Exception ex)
@@ -40,7 +40,7 @@ public static class GroupAdminCommand
         {
             try
             {
-                Group.Delete(groupName);
+                GroupRepository.Delete(groupName);
                 await args.ReplyWithAtAsync($"组 {groupName} 删除成功!");
             }
             catch (Exception ex)
@@ -60,7 +60,7 @@ public static class GroupAdminCommand
         {
             try
             {
-                Group.AddPermission(groupName, permission);
+                GroupRepository.AddPermission(groupName, permission);
                 await args.ReplyWithAtAsync($"权限 {permission} 已添加到组 {groupName}");
             }
             catch (Exception ex)
@@ -80,7 +80,7 @@ public static class GroupAdminCommand
         {
             try
             {
-                Group.RemovePermission(groupName, permission);
+                GroupRepository.RemovePermission(groupName, permission);
                 await args.ReplyWithAtAsync($"权限 {permission} 已从组 {groupName} 删除");
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ public static class GroupAdminCommand
         {
             try
             {
-                Group.SetParent(groupName, parentGroupName);
+                GroupRepository.SetParent(groupName, parentGroupName);
                 await args.ReplyWithAtAsync($"组 {groupName} 的父组已更改为 {parentGroupName}");
             }
             catch (Exception ex)
@@ -118,7 +118,7 @@ public static class GroupAdminCommand
         [Main]
         public static async Task Execute(CommandArgs args)
         {
-            var groups = Group.GetAll();
+            var groups = GroupRepository.GetAll();
 
             if (groups.Count == 0)
             {
@@ -133,11 +133,11 @@ public static class GroupAdminCommand
 
             foreach (var group in groups)
             {
-                var perms = string.Join(", ", group.Permissions);
+                var perms = string.Join(", ", group.LocalPermissions.Permissions);
                 if (string.IsNullOrEmpty(perms))
                     perms = "无";
-                var parent = string.IsNullOrEmpty(group.Parent?.Name) ? "无" : group.Parent?.Name;
-                builder.AddRow(group.Name, parent ?? "无", perms);
+                var parent = string.IsNullOrEmpty(group.ParentName) ? "无" : group.ParentName;
+                builder.AddRow(group.Name, parent, perms);
             }
 
             await args.ReplyImageAsync(builder.Build());

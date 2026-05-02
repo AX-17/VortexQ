@@ -8,6 +8,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("切换操作的服务器")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.switch")]
+[DefaultCommand]
 public static class ServerSwitchCommand
 {
     [Main]

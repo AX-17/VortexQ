@@ -8,6 +8,11 @@ public class CommandAttribute(params string[] aliases) : Attribute
     public HashSet<string> Alias { get; } = [.. aliases];
 }
 
+public class DefaultCommandAttribute : CommandAttribute
+{
+
+}
+
 [AttributeUsage(AttributeTargets.Class)]
 public class CommandTypeAttribute(CommandType commandType) : Attribute
 {

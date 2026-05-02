@@ -8,6 +8,7 @@ namespace Vortex.Bot.Command.Currencys;
 [HelpText("金币系统")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.currency")]
+[DefaultCommand]
 public static class CurrencyCommand
 {
     [Command("query", "查询")]
@@ -125,6 +126,7 @@ public static class CurrencyCommand
     [Command("transfer", "转账")]
     [CommandType(CommandType.Group | CommandType.Friend)]
     [Permission("vortex.currency.transfer")]
+    [DefaultCommand]
     public static class TransferCmd
     {
         [Main]

@@ -8,6 +8,7 @@ namespace Vortex.Bot.Command.Misc;
 [HelpText("查询网络缩写含义")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.misc.abbreviation")]
+[DefaultCommand]
 public static class AbbreviationCommand
 {
     [Main]

@@ -10,6 +10,7 @@ namespace Vortex.Bot.Command.User;
 [HelpText("查询用户信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.user.query")]
+[DefaultCommand]
 public static class QueryUserCommand
 {
     [Main]

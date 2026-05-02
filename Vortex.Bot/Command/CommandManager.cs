@@ -17,7 +17,7 @@ public sealed class CommandManager(ILogger<CommandManager> logger)
     public void AutoRegister(Assembly assembly)
     {
         var commandTypes = assembly.GetTypes()
-            .Where(static t => t.IsClass && !t.IsNested && t.GetCustomAttribute<CommandAttribute>() != null);
+            .Where(static t => t.IsClass && !t.IsNested && t.GetCustomAttributes<CommandAttribute>().Any());
 
         foreach (var type in commandTypes)
         {

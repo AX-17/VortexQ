@@ -12,6 +12,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("注册游戏账号")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.register")]
+[DefaultCommand]
 public static partial class RegisterCommand
 {
     [Main]

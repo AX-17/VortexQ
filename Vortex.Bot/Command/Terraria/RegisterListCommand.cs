@@ -10,6 +10,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看自己的注册列表")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.registerlist")]
+[DefaultCommand]
 public static class RegisterListCommand
 {
     [Main]

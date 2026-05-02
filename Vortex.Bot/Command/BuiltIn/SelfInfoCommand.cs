@@ -8,6 +8,7 @@ namespace Vortex.Bot.Command.BuiltIn;
 [HelpText("查看个人信息")]
 [CommandType(CommandType.Group | CommandType.Friend)]
 [Permission("vortex.selfinfo")]
+[DefaultCommand]
 public static class SelfInfoCommand
 {
     [Main]

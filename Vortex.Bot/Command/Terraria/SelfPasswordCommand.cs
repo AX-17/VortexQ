@@ -12,6 +12,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看自己的游戏密码")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.selfpassword")]
+[DefaultCommand]
 public static class SelfPasswordCommand
 {
     [Main]

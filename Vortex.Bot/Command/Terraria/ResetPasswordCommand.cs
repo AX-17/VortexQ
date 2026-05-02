@@ -12,6 +12,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("重置游戏密码")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.resetpassword")]
+[DefaultCommand]
 public static class ResetPasswordCommand
 {
     [Main]

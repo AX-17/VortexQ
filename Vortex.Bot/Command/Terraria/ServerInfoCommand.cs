@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看服务器信息")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.server.info")]
+[DefaultCommand]
 public static class ServerInfoCommand
 {
     [Main]

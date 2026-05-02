@@ -6,7 +6,7 @@ using Vortex.Bot.Command;
 using Vortex.Bot.Configuration;
 using Vortex.Bot.Core.Service;
 using Vortex.Bot.Database;
-using Vortex.Bot.Database.Models;
+using Vortex.Bot.Models;
 using Vortex.Bot.Utility;
 
 namespace Vortex.Bot;

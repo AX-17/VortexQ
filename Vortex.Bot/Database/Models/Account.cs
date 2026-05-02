@@ -1,4 +1,5 @@
 using LinqToDB.Mapping;
+using Vortex.Bot.Models;
 
 namespace Vortex.Bot.Database.Models;
 
@@ -15,7 +16,7 @@ public class Account
     [NotColumn]
     public Group Group
     {
-        get => Group.GetGroupOrDefault(GroupName);
+        get => GroupRepository.GetGroupOrDefault(GroupName);
         set => GroupName = value.Name;
     }
 
@@ -45,7 +46,7 @@ public class Account
             throw new InvalidOperationException($"账户 {userId} 已存在");
         }
 
-        if (!Group.Exists(groupName))
+        if (!GroupRepository.Exists(groupName))
         {
             throw new InvalidOperationException($"组 '{groupName}' 不存在");
         }
@@ -68,7 +69,7 @@ public class Account
     {
         var account = GetByUserId(userId) ?? throw new InvalidOperationException($"账户 {userId} 不存在");
 
-        if (!Group.Exists(groupName))
+        if (!GroupRepository.Exists(groupName))
         {
             throw new InvalidOperationException($"组 '{groupName}' 不存在");
         }

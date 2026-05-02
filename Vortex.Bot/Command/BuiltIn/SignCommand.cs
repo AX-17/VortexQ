@@ -7,6 +7,7 @@ namespace Vortex.Bot.Command.BuiltIn;
 [HelpText("每日签到获取金币")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.sign")]
+[DefaultCommand]
 public static class SignCommand
 {
     [Main]

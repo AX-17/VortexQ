@@ -63,7 +63,7 @@ public class MessageRecord
 
     public static List<MessageRecord> GetAll()
     {
-        return RecordBase.GetContext<MessageRecord>("MessageRecord").Records.ToList();
+        return [.. RecordBase.GetContext<MessageRecord>("MessageRecord").Records];
     }
 
     public static void Clear()

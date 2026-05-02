@@ -42,7 +42,7 @@ public class ServerOnlineBuilder
             ServerName = serverName,
             OnlineCount = onlineCount,
             MaxCount = maxCount,
-            Players = players.Select(p =>
+            Players = [.. players.Select(p =>
             {
                 var user = TerrariaUser.GetUserByName(p.Name, serverName);
                 return new ServerOnlinePlayerItem
@@ -53,7 +53,7 @@ public class ServerOnlineBuilder
                     IsLogin = p.IsLogin,
                     UserId = user?.Id
                 };
-            }).ToList()
+            })]
         };
         Sections.Add(section);
         return this;
@@ -400,7 +400,7 @@ public class ServerOnlineGenerate : IImageGenerator<ServerOnlineBuilder>
         }
     }
 
-    private Font CreateFont(float size, FontStyle style = FontStyle.Regular)
+    private static Font CreateFont(float size, FontStyle style = FontStyle.Regular)
     {
         return CardRenderer.CreateFont(size, style);
     }
@@ -434,7 +434,7 @@ public class ServerOnlineGenerate : IImageGenerator<ServerOnlineBuilder>
         ctx.DrawText(initialOptions, initial, AccentColor);
     }
 
-    private void DrawCircularAvatar(IImageProcessingContext ctx, Image<Rgba32> avatar, int x, int y, int size)
+    private static void DrawCircularAvatar(IImageProcessingContext ctx, Image<Rgba32> avatar, int x, int y, int size)
     {
         using var circularAvatar = avatar.CutCircles(size, 2);
         ctx.DrawImage(circularAvatar, new Point(x - 2, y - 2), 1f);

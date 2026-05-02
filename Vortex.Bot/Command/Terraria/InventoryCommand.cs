@@ -9,6 +9,7 @@ namespace Vortex.Bot.Command.Terraria;
 [HelpText("查看玩家背包")]
 [CommandType(CommandType.Group)]
 [Permission("vortex.terraria.inventory")]
+[DefaultCommand]
 public static class InventoryCommand
 {
     [Main]
