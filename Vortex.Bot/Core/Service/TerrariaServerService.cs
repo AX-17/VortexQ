@@ -349,6 +349,13 @@ public partial class TerrariaServer(TerrariaServerEnity config, VortexSocketServ
         return response;
     }
 
+    public async Task<MapImagePacketResponse?> GetMapImageAsync(ImageType imageType)
+    {
+        if (_connectedClientId == null)
+            return null;
+        var request = new MapImagePacket { ImageType = imageType };
+        return await VortexServer.RequestAsync<MapImagePacket, MapImagePacketResponse>(_connectedClientId.Value, request, 20 * 1000);
+    }
     public async Task<ServerOnlinePacketResponse?> GetOnlinePlayersAsync()
     {
         if (_connectedClientId == null)

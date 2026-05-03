@@ -236,20 +236,22 @@ public class VortexClient(SocketConfig config) : IDisposable
     {
         if (_stream == null) return null;
 
-        var lengthBytes = new byte[2];
-        int read = await _stream.ReadAsync(lengthBytes.AsMemory(0, 2), cancellationToken);
-        if (read < 2)
+        var lengthBytes = new byte[4];
+        int read = await _stream.ReadAsync(lengthBytes.AsMemory(0, 4), cancellationToken);
+        if (read < 4)
         {
             TShockAPI.TShock.Log.ConsoleError($"[Vortex.Adapter] 读取长度失败，只读取了 {read} 字节");
             return null;
         }
 
-        var length = BitConverter.ToInt16(lengthBytes);
+        var length = BitConverter.ToInt32(lengthBytes);
         var data = new byte[length];
         data[0] = lengthBytes[0];
         data[1] = lengthBytes[1];
+        data[2] = lengthBytes[2];
+        data[3] = lengthBytes[3];
 
-        int totalRead = 2;
+        int totalRead = 4;
         while (totalRead < length)
         {
             read = await _stream.ReadAsync(data.AsMemory(totalRead, length - totalRead), cancellationToken);

@@ -7,7 +7,7 @@ public class MapImageHandler(Net.VortexClient client) : RequestHandlerBase<MapIm
 {
     public override MapImagePacketResponse Handle(MapImagePacket request)
     {
-        var buffer = Utils.CreateMapBytes((Enumerates.ImageType)request.ImageType);
+        var buffer = Utils.CreateMapBytes(request.ImageType);
         return new MapImagePacketResponse
         {
             RequestId = request.RequestId,

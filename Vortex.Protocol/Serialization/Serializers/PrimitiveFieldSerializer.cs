@@ -4,13 +4,32 @@ internal class PrimitiveFieldSerializer<T> : FieldSerializer<T>
 {
     protected override T ReadOverride(BinaryReader br)
     {
-        var method = typeof(BinaryReader).GetMethod($"Read{typeof(T).Name}")!;
-        return (T)method.Invoke(br, null)!;
+        var type = typeof(T);
+        
+        if (type.IsEnum)
+        {
+            type = Enum.GetUnderlyingType(type);
+        }
+        
+        var method = typeof(BinaryReader).GetMethod($"Read{type.Name}")!;
+        var result = method.Invoke(br, null)!;
+        if (typeof(T).IsEnum)
+        {
+            return (T)Enum.ToObject(typeof(T), result);
+        }
+        
+        return (T)result;
     }
 
     protected override void WriteOverride(BinaryWriter bw, T value)
     {
-        var method = typeof(BinaryWriter).GetMethod($"Write", [typeof(T)])!;
+        var type = typeof(T);
+        if (type.IsEnum)
+        {
+            type = Enum.GetUnderlyingType(type);
+        }
+        
+        var method = typeof(BinaryWriter).GetMethod("Write", [type])!;
         method.Invoke(bw, [value]);
     }
 }

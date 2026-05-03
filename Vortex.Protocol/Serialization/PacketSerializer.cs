@@ -220,13 +220,13 @@ public class PacketSerializer
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
 
-        bw.Write((short)0);
+        bw.Write((int)0);
         bw.Write((byte)packet.PacketID);
 
         if (_serializers.TryGetValue(packet.GetType(), out var serializer))
         {
             serializer(bw, packet);
-            var length = (short)ms.Position;
+            var length = (int)ms.Position;
             ms.Position = 0;
             bw.Write(length);
 
@@ -238,7 +238,7 @@ public class PacketSerializer
 
     public INetPacket? Deserialize(BinaryReader br)
     {
-        var length = br.ReadInt16();
+        var length = br.ReadInt32();
         var packetType = (PacketType)br.ReadByte();
 
         if (_deserializers.TryGetValue(packetType, out var deserializer))

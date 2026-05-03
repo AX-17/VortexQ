@@ -21,6 +21,7 @@ using TShockAPI.DB;
 using VItem = Vortex.Protocol.Models.Item;
 using VPlayerData = Vortex.Protocol.Models.PlayerData;
 using TerrPlayer = Terraria.Player;
+using Vortex.Protocol.Packets;
 
 namespace Vortex.Adapter;
 
@@ -662,15 +663,15 @@ internal class Utils
         return item;
     }
 
-    public static byte[] CreateMapBytes(Enumerates.ImageType type)
+    public static byte[] CreateMapBytes(ImageType type)
     {
         var image = CreateMapImage();
         using var stream = new MemoryStream();
-        image.Save(stream, type == Enumerates.ImageType.Png ? new PngEncoder() : new JpegEncoder());
+        image.Save(stream, type == ImageType.Png ? new PngEncoder() : new JpegEncoder());
         return stream.ToArray();
     }
 
-    public static SixLabors.ImageSharp.Image CreateMapImage()
+    public static Image CreateMapImage()
     {
         Image<Rgba32> image = new(Main.maxTilesX, Main.maxTilesY);
 

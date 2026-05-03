@@ -206,16 +206,18 @@ public sealed class VortexSocketService(
 
     private async Task<INetPacket?> ReadPacketAsync(NetworkStream stream, CancellationToken cancellationToken)
     {
-        var lengthBytes = new byte[2];
-        var read = await stream.ReadAsync(lengthBytes.AsMemory(0, 2), cancellationToken);
-        if (read < 2) return null;
+        var lengthBytes = new byte[4];
+        var read = await stream.ReadAsync(lengthBytes.AsMemory(0, 4), cancellationToken);
+        if (read < 4) return null;
 
-        var length = BitConverter.ToInt16(lengthBytes);
+        var length = BitConverter.ToInt32(lengthBytes);
         var data = new byte[length];
         data[0] = lengthBytes[0];
         data[1] = lengthBytes[1];
+        data[2] = lengthBytes[2];
+        data[3] = lengthBytes[3];
 
-        var totalRead = 2;
+        var totalRead = 4;
         while (totalRead < length)
         {
             read = await stream.ReadAsync(data.AsMemory(totalRead, length - totalRead), cancellationToken);
