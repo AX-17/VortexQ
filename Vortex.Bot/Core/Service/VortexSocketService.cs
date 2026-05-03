@@ -44,8 +44,6 @@ public sealed class VortexSocketService(
         remove => _connectionManager.OnClientDisconnected -= value;
     }
 
-    public event Action<ClientConnection, INetPacket>? OnPacketReceived;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_config.Enabled)
@@ -147,7 +145,15 @@ public sealed class VortexSocketService(
 
             var context = CreateRouteContext(client);
             _logger.LogPacketReceived(packet.PacketID, client.ClientName);
-            OnPacketReceived?.Invoke(client, packet);
+
+            if (packet is IClientPacket clientPacket)
+            {
+                if (_handlerManager.TryCompletePendingRequest(clientPacket))
+                {
+                    _logger.LogResponseMatched(clientPacket.RequestId, packet.PacketID);
+                    continue;
+                }
+            }
 
             var response = await _handlerManager.ProcessAsync(packet, context);
 
@@ -292,7 +298,7 @@ public sealed class VortexSocketService(
         return results.Count(r => r);
     }
 
-    public async Task<TResponse?> RequestAsync<TRequest, TResponse>(Guid clientId, TRequest request, int timeoutMs = 1000)
+    public async Task<TResponse?> RequestAsync<TRequest, TResponse>(Guid clientId, TRequest request, int timeoutMs = 10000)
         where TRequest : IServicePacket
         where TResponse : class, IClientPacket
     {
@@ -302,37 +308,32 @@ public sealed class VortexSocketService(
             return null;
         }
 
-        var tcs = new TaskCompletionSource<IClientPacket>();
-        void handler(ClientConnection conn, INetPacket packet)
-        {
-            if (conn.ClientId == clientId && packet is TResponse response && response.RequestId == request.RequestId)
-            {
-                tcs.TrySetResult(response);
-                OnPacketReceived -= handler;
-            }
-        }
-
-        OnPacketReceived += handler;
+        var requestId = request.RequestId;
+        _logger.LogRequestStarted(requestId, typeof(TRequest).Name, clientId, timeoutMs);
 
         try
         {
             if (!await SendToClientAsync(clientId, request))
             {
-                OnPacketReceived -= handler;
+                _logger.LogRequestSendFailed(requestId);
                 return null;
             }
 
-            using var cts = new CancellationTokenSource(timeoutMs);
-            await using (cts.Token.Register(() => tcs.TrySetCanceled()))
+            _logger.LogRequestSent(requestId);
+
+            var result = await _handlerManager.WaitForResponseAsync(requestId, timeoutMs);
+            if (result == null)
             {
-                var result = await tcs.Task;
-                return result as TResponse;
+                _logger.LogRequestTimeout(clientId, requestId, timeoutMs);
+                return null;
             }
+
+            _logger.LogRequestCompleted(requestId);
+            return result as TResponse;
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
-            _logger.LogRequestTimeout(clientId);
-            OnPacketReceived -= handler;
+            _logger.LogRequestException(requestId, ex.Message);
             return null;
         }
     }
@@ -400,6 +401,24 @@ public static partial class VortexSocketServiceLoggerExtension
     [LoggerMessage(LogLevel.Warning, "[VortexServer] Client {ClientId} is offline")]
     public static partial void LogClientOffline(this ILogger<VortexSocketService> logger, Guid clientId);
 
-    [LoggerMessage(LogLevel.Warning, "[VortexServer] Request timeout for {ClientId}")]
-    public static partial void LogRequestTimeout(this ILogger<VortexSocketService> logger, Guid clientId);
+    [LoggerMessage(LogLevel.Warning, "[VortexServer] Request {RequestId} timeout after {TimeoutMs}ms for client {ClientId}")]
+    public static partial void LogRequestTimeout(this ILogger<VortexSocketService> logger, Guid clientId, Guid requestId, int timeoutMs);
+
+    [LoggerMessage(LogLevel.Debug, "[VortexServer] Request {RequestId} ({RequestType}) started for client {ClientId}, timeout: {TimeoutMs}ms")]
+    public static partial void LogRequestStarted(this ILogger<VortexSocketService> logger, Guid requestId, string requestType, Guid clientId, int timeoutMs);
+
+    [LoggerMessage(LogLevel.Debug, "[VortexServer] Request {RequestId} sent successfully")]
+    public static partial void LogRequestSent(this ILogger<VortexSocketService> logger, Guid requestId);
+
+    [LoggerMessage(LogLevel.Warning, "[VortexServer] Request {RequestId} failed to send")]
+    public static partial void LogRequestSendFailed(this ILogger<VortexSocketService> logger, Guid requestId);
+
+    [LoggerMessage(LogLevel.Debug, "[VortexServer] Response matched for Request {RequestId}, Packet: {PacketId}")]
+    public static partial void LogResponseMatched(this ILogger<VortexSocketService> logger, Guid requestId, Protocol.Enums.PacketType packetId);
+
+    [LoggerMessage(LogLevel.Debug, "[VortexServer] Request {RequestId} completed")]
+    public static partial void LogRequestCompleted(this ILogger<VortexSocketService> logger, Guid requestId);
+
+    [LoggerMessage(LogLevel.Error, "[VortexServer] Request {RequestId} exception: {Message}")]
+    public static partial void LogRequestException(this ILogger<VortexSocketService> logger, Guid requestId, string message);
 }

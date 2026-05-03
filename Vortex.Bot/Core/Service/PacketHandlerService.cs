@@ -14,6 +14,7 @@ public sealed class PacketHandlerService(
     private readonly ILogger<PacketHandlerService> _logger = logger;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ConcurrentDictionary<byte, Func<INetPacket, PacketRouteContext, Task<IClientPacket?>>> _handlers = new();
+    private readonly ConcurrentDictionary<Guid, TaskCompletionSource<IClientPacket>> _pendingRequests = new();
 
     public void RegisterHandler<TRequest, TResponse>(IRoutedPacketHandler<TRequest, TResponse> handler)
         where TRequest : IServicePacket, new()
@@ -228,6 +229,44 @@ public sealed class PacketHandlerService(
     public bool HasHandler(byte packetId) => _handlers.ContainsKey(packetId);
 
     public int HandlerCount => _handlers.Count;
+
+    public async Task<IClientPacket?> WaitForResponseAsync(Guid requestId, int timeoutMs, CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource<IClientPacket>();
+        _pendingRequests[requestId] = tcs;
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(timeoutMs);
+
+        try
+        {
+            using (cts.Token.Register(() =>
+            {
+                if (_pendingRequests.TryRemove(requestId, out var pendingTcs))
+                {
+                    pendingTcs.TrySetCanceled();
+                }
+            }))
+            {
+                return await tcs.Task;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _pendingRequests.TryRemove(requestId, out _);
+            return null;
+        }
+    }
+
+    public bool TryCompletePendingRequest(IClientPacket response)
+    {
+        if (_pendingRequests.TryRemove(response.RequestId, out var tcs))
+        {
+            tcs.TrySetResult(response);
+            return true;
+        }
+        return false;
+    }
 }
 
 public static partial class PacketHandlerServiceLoggerExtension

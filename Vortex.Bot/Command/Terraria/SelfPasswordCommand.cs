@@ -67,17 +67,14 @@ public static class SelfPasswordCommand
                 .Replace("{{ServerName}}", server.Config.Name)
                 .Replace("{{PasswordList}}", passwordListHtml.ToString());
 
-            await Task.Run(() =>
-            {
-                using var mail = MailUtility.Builder(mailConfig.Host, mailConfig.Port, mailConfig.Password, mailConfig.EnableSsl)
-                    .SetSender(mailConfig.From)
-                    .AddTarget($"{args.SenderUin}@qq.com")
-                    .SetTile($"[{server.Config.Name}] Terraria 服务器密码查询")
-                    .SetBody(emailBody)
-                    .EnableHtmlBody(true);
+            using var mail = MailUtility.Builder(mailConfig.Host, mailConfig.Port, mailConfig.Password, mailConfig.EnableSsl)
+                .SetSender(mailConfig.From, mailConfig.FromName)
+                .AddTarget($"{args.SenderUin}@qq.com")
+                .SetTitle($"[{server.Config.Name}] Terraria 服务器密码查询")
+                .SetBody(emailBody)
+                .EnableHtmlBody(true);
 
-                mail.Send();
-            });
+            await mail.SendAsync();
 
             await args.ReplyWithAtAsync("密码已发送至您的QQ邮箱，请查收！");
         }

@@ -98,17 +98,14 @@ public static partial class RegisterCommand
                 Password = password
             });
 
-            await Task.Run(() =>
-            {
-                using var mail = MailUtility.Builder(mailConfig.Host, mailConfig.Port, mailConfig.Password, mailConfig.EnableSsl)
-                    .SetSender(mailConfig.From)
-                    .AddTarget($"{args.SenderUin}@qq.com")
-                    .SetTile($"[{serverName}] Terraria 服务器注册成功")
-                    .SetBody(emailBody)
-                    .EnableHtmlBody(true);
+            using var mail = MailUtility.Builder(mailConfig.Host, mailConfig.Port, mailConfig.Password, mailConfig.EnableSsl)
+                .SetSender(mailConfig.From, mailConfig.FromName)
+                .AddTarget($"{args.SenderUin}@qq.com")
+                .SetTitle($"[{serverName}] Terraria 服务器注册成功")
+                .SetBody(emailBody)
+                .EnableHtmlBody(true);
 
-                mail.Send();
-            });
+            await mail.SendAsync();
         }
         catch (Exception ex)
         {
