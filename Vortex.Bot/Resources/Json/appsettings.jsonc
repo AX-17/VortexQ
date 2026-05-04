@@ -44,6 +44,10 @@
             "FromName": "Vortex Bot",
             "EnableSsl": true
         },
+        "Miscellaneous": {
+            "CurrencyName": "金币",
+            "SginCurrencyAcquisitionRange": "100-300"
+        },
         "SuperAdmins": []
     },
     "TerrariaServers": {

@@ -8,15 +8,15 @@ public class PlayerData
     public int StatLife { get; set; }
     public int StatManaMax { get; set; }
     public int StatMana { get; set; }
-    public int[] BuffType { get; set; } = Array.Empty<int>();
-    public int[] BuffTime { get; set; } = Array.Empty<int>();
-    public Item[] Inventory { get; set; } = Array.Empty<Item>();
-    public Item[] MiscEquip { get; set; } = Array.Empty<Item>();
-    public Item[] MiscDye { get; set; } = Array.Empty<Item>();
-    public Suits[] Loadout { get; set; } = Array.Empty<Suits>();
-    public Item[] TrashItem { get; set; } = Array.Empty<Item>();
-    public Item[] Piggy { get; set; } = Array.Empty<Item>();
-    public Item[] Safe { get; set; } = Array.Empty<Item>();
-    public Item[] Forge { get; set; } = Array.Empty<Item>();
-    public Item[] VoidVault { get; set; } = Array.Empty<Item>();
+    public int[] BuffType { get; set; } = [];
+    public int[] BuffTime { get; set; } = [];
+    public Item[] Inventory { get; set; } = [];
+    public Item[] MiscEquip { get; set; } = [];
+    public Item[] MiscDye { get; set; } = [];
+    public Suits[] Loadout { get; set; } = [];
+    public Item[] TrashItem { get; set; } = [];
+    public Item[] Piggy { get; set; } = [];
+    public Item[] Safe { get; set; } = [];
+    public Item[] Forge { get; set; } = [];
+    public Item[] VoidVault { get; set; } = [];
 }
