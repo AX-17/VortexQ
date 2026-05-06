@@ -16,10 +16,12 @@ namespace Vortex.Adapter;
 [ApiVersion(2, 1)]
 public class Plugin : TerrariaPlugin
 {
-    public override string Author => "少司命";
+    public override string Author => "少司命&十七";
     public override string Description => "Vortex 适配插件";
     public override string Name => Assembly.GetExecutingAssembly().GetName().Name!;
-    public override Version Version => new(1, 0, 0, 0);
+    public override Version Version => new(1, 1, 0, 0);
+
+    private const string EmptyCommandHelpText = "[Vortex.Adapter] Empty placeholder command";
 
     internal static readonly List<TSPlayer> ServerPlayers = new();
     internal static Channel<int> Channeler = Channel.CreateBounded<int>(1);
@@ -64,7 +66,7 @@ public class Plugin : TerrariaPlugin
         ServerApi.Hooks.NpcKilled.Register(this, OnKillNpc);
         GetDataHandlers.KillMe.Register(this.OnKill);
 
-        Config.Instance.SocketConfig.EmptyCommand.ForEach(x => Commands.ChatCommands.Add(new("", (_) => { }, x)));
+        RegisterEmptyCommands(Config.Instance.SocketConfig.EmptyCommand);
         GeneralHooks.ReloadEvent += Config.Reload;
         Utils.HandleCommandLine(Environment.GetCommandLineArgs());
 
@@ -102,14 +104,59 @@ public class Plugin : TerrariaPlugin
             _timer.Elapsed -= TimerUpdate;
             _timer.Stop();
 
-            RemoveAssemblyCommands(Assembly.GetExecutingAssembly());
+            RemoveAssemblyCommands(Assembly.GetExecutingAssembly(), Config.Instance.SocketConfig.EmptyCommand);
         }
         base.Dispose(disposing);
     }
 
-    public static void RemoveAssemblyCommands(Assembly assembly)
+    public static void RemoveAssemblyCommands(Assembly assembly, IEnumerable<string>? emptyCommands = null)
     {
         Commands.ChatCommands.RemoveAll(cmd => cmd.GetType().Assembly == assembly);
+        RemoveRegisteredEmptyCommands(emptyCommands);
+    }
+
+    public static void RegisterEmptyCommands(IEnumerable<string>? emptyCommands)
+    {
+        var normalizedNames = NormalizeEmptyCommandNames(emptyCommands);
+        RemoveRegisteredEmptyCommands(normalizedNames);
+
+        foreach (var commandName in normalizedNames)
+        {
+            Commands.ChatCommands.Add(new TShockAPI.Command("", _ => { }, commandName)
+            {
+                HelpText = EmptyCommandHelpText
+            });
+        }
+    }
+
+    private static void RemoveRegisteredEmptyCommands(IEnumerable<string>? emptyCommands)
+    {
+        var normalizedNames = NormalizeEmptyCommandNames(emptyCommands);
+        if (normalizedNames.Length == 0)
+        {
+            return;
+        }
+
+        var nameSet = new HashSet<string>(normalizedNames, StringComparer.OrdinalIgnoreCase);
+        Commands.ChatCommands.RemoveAll(cmd =>
+            cmd.Names.Count == 1 &&
+            nameSet.Contains(cmd.Names[0]) &&
+            (cmd.HelpText == EmptyCommandHelpText ||
+             (cmd.Permissions.Count == 1 && string.IsNullOrWhiteSpace(cmd.Permissions[0]))));
+    }
+
+    private static string[] NormalizeEmptyCommandNames(IEnumerable<string>? emptyCommands)
+    {
+        if (emptyCommands == null)
+        {
+            return [];
+        }
+
+        return emptyCommands
+            .Where(static x => !string.IsNullOrWhiteSpace(x))
+            .Select(static x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private void TimerUpdate(object? sender, ElapsedEventArgs e)
