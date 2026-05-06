@@ -16,10 +16,10 @@ namespace Vortex.Adapter;
 [ApiVersion(2, 1)]
 public class Plugin : TerrariaPlugin
 {
-    public override string Author => "少司命&十七";
+    public override string Author => "少司命";
     public override string Description => "Vortex 适配插件";
     public override string Name => Assembly.GetExecutingAssembly().GetName().Name!;
-    public override Version Version => new(1, 1, 0, 0);
+    public override Version Version => new(1, 0, 0, 0);
 
     private const string EmptyCommandHelpText = "[Vortex.Adapter] Empty placeholder command";
 
@@ -112,13 +112,13 @@ public class Plugin : TerrariaPlugin
     public static void RemoveAssemblyCommands(Assembly assembly, IEnumerable<string>? emptyCommands = null)
     {
         Commands.ChatCommands.RemoveAll(cmd => cmd.GetType().Assembly == assembly);
-        RemoveRegisteredEmptyCommands(emptyCommands);
+        RemoveRegisteredEmptyCommandsCore(NormalizeEmptyCommandNames(emptyCommands));
     }
 
     public static void RegisterEmptyCommands(IEnumerable<string>? emptyCommands)
     {
         var normalizedNames = NormalizeEmptyCommandNames(emptyCommands);
-        RemoveRegisteredEmptyCommands(normalizedNames);
+        RemoveRegisteredEmptyCommandsCore(normalizedNames);
 
         foreach (var commandName in normalizedNames)
         {
@@ -129,9 +129,8 @@ public class Plugin : TerrariaPlugin
         }
     }
 
-    private static void RemoveRegisteredEmptyCommands(IEnumerable<string>? emptyCommands)
+    private static void RemoveRegisteredEmptyCommandsCore(string[] normalizedNames)
     {
-        var normalizedNames = NormalizeEmptyCommandNames(emptyCommands);
         if (normalizedNames.Length == 0)
         {
             return;
@@ -139,10 +138,8 @@ public class Plugin : TerrariaPlugin
 
         var nameSet = new HashSet<string>(normalizedNames, StringComparer.OrdinalIgnoreCase);
         Commands.ChatCommands.RemoveAll(cmd =>
-            cmd.Names.Count == 1 &&
-            nameSet.Contains(cmd.Names[0]) &&
-            (cmd.HelpText == EmptyCommandHelpText ||
-             (cmd.Permissions.Count == 1 && string.IsNullOrWhiteSpace(cmd.Permissions[0]))));
+            cmd.HelpText == EmptyCommandHelpText &&
+            nameSet.Contains(cmd.Name));
     }
 
     private static string[] NormalizeEmptyCommandNames(IEnumerable<string>? emptyCommands)
